@@ -4,7 +4,12 @@ import serverlessHttp from "serverless-http";
 
 // Express アプリを作成
 const app = express();
-app.use(express.json());
+app.use((req, res, next) => {
+    const userId = req.headers['x-user-id'];
+    req.user = userId ? { id: userId as string } : undefined;
+    next();
+});
+
 
 interface Document {
     id: string;

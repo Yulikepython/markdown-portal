@@ -4,6 +4,12 @@ import { getDocumentById, createDocument, updateDocument } from "../services/api
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 
+// モックのログイン状態
+const mockUser = {
+    id: "user1", // ログイン済みユーザーのID
+    isAuthenticated: true, // ログイン済みの場合は true, Anonymous は false
+};
+
 const DocPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -20,7 +26,7 @@ const DocPage: React.FC = () => {
                 try {
                     const data = await getDocumentById(id);
                     setContent(data.content);
-                    setIsEditable(data.isOwner); // 所有者情報を取得
+                    setIsEditable(data.userId === mockUser.id && mockUser.isAuthenticated); // 所有者かつログイン済み
                 } catch (err) { //eslint-disable-line
                     setError("Failed to load the document.");
                 }
