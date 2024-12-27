@@ -1,0 +1,32 @@
+service: markdown-portal-backend
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-northeast-1 # お好みのAWSリージョン
+  stage: dev
+  environment:
+    DB_CONNECTION_STRING: "your-database-connection-string" # 必要に応じて設定
+
+functions:
+  docsHandler:
+    handler: src/index.handler
+    events:
+      - http:
+          path: api/docs
+          method: get
+      - http:
+          path: api/docs/{id}
+          method: get
+      - http:
+          path: api/docs
+          method: post
+      - http:
+          path: api/docs/{id}
+          method: put
+      - http:
+          path: api/docs/{id}
+          method: delete
+
+plugins:
+  - serverless-offline # ローカル環境でのテスト用
