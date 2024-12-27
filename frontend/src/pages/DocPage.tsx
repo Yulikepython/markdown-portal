@@ -1,98 +1,98 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getDocumentById, createDocument, updateDocument } from "../services/apiClient";
-import { marked } from "marked";
-import DOMPurify from "dompurify";
+import MdEditor from "react-markdown-editor-lite";
+import "react-markdown-editor-lite/lib/index.css";
+import ReactMarkdown from "react-markdown";
 
-// モックのログイン状態
+import styles from "../styles/DocPage.module.scss";
+
 const mockUser = {
-    id: "user1", // ログイン済みユーザーのID
-    isAuthenticated: true, // ログイン済みの場合は true, Anonymous は false
+    id: "user1",
+    isAuthenticated: true,
+};
+
+const extractTitle = (markdown: string): string => {
+    const lines = markdown.split('\n');
+    for (const line of lines) {
+        if (line.startsWith('#')) {
+            return line.replace(/^#+\s*/, '').trim();
+        }
+    }
+    return markdown.substring(0, 20).trim() || "Untitled";
 };
 
 const DocPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [content, setContent] = useState<string>(""); // Markdownコンテンツ
-    const [isEditable, setIsEditable] = useState<boolean>(true); // 所有者かどうか
-    const [previewHTML, setPreviewHTML] = useState<string>(""); // HTMLプレビュー
+    const [content, setContent] = useState<string>("");
+    const [isEditable, setIsEditable] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // ドキュメントの読み込み
     useEffect(() => {
         const fetchDocument = async () => {
             if (id) {
                 try {
                     const data = await getDocumentById(id);
                     setContent(data.content);
-                    setIsEditable(data.userId === mockUser.id && mockUser.isAuthenticated); // 所有者かつログイン済み
-                } catch (err) { //eslint-disable-line
+                    setIsEditable(data.userId === mockUser.id && mockUser.isAuthenticated);
+                } catch (err) {
+                    console.error(err);
                     setError("Failed to load the document.");
                 }
             }
         };
 
-        fetchDocument().then(); // 非同期関数を内部で呼び出す
+        fetchDocument();
     }, [id]);
-
-    // MarkdownをHTMLにパース
-    useEffect(() => {
-        const convertToHTML = async () => {
-            const rawHTML = await marked(content); // Markdown → HTML変換
-            setPreviewHTML(DOMPurify.sanitize(rawHTML)); // HTMLをサニタイズ
-        };
-
-        convertToHTML().then(); // 非同期関数を内部で呼び出す
-    }, [content]);
 
     const handleSave = async () => {
         try {
+            console.log("Saving document...");
+            console.log("Content:", content);
+
+            const title = extractTitle(content);
+            console.log("Extracted Title:", title);
+
             if (id) {
-                await updateDocument(id, "", content); // タイトルなし
+                console.log("Updating existing document with ID:", id);
+                await updateDocument(id, title, content);
             } else {
-                await createDocument("", content); // タイトルなし
+                console.log("Creating a new document");
+                await createDocument(title, content);
             }
-            navigate("/"); // 保存後、一覧ページへリダイレクト
-        } catch (err) { //eslint-disable-line
+            navigate("/");
+        } catch (err) {
+            console.error("Error during save:", err);
             setError("Failed to save the document.");
         }
     };
 
     if (error) {
-        return <div style={{ color: "red" }}>{error}</div>;
+        return <div className={styles.errorMessage}>{error}</div>;
     }
 
     return (
-        <div style={{ display: "flex" }}>
-            {/* 左ペイン: Markdown入力エリア */}
-            <div style={{ flex: 1, marginRight: "16px" }}>
-                {isEditable ? (
-                    <>
-            <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your Markdown here..."
-                style={{ width: "100%", height: "400px" }}
-            />
-                        <button onClick={handleSave} style={{ marginTop: "8px" }}>
-                            Save
-                        </button>
-                    </>
-                ) : (
-                    <p>You do not have permission to edit this document.</p>
-                )}
-            </div>
+        <div className={styles.container}>
+            {isEditable ? (
+                <>
+                    <div className={styles.editor}>
+                        <MdEditor
+                            style={{ flex: 1 }}
+                            value={content}
+                            onChange={({ text }) => setContent(text)}
+                            renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
+                        />
+                    </div>
 
-            {/* 右ペイン: HTMLプレビュー */}
-            <div style={{ flex: 1, borderLeft: "1px solid #ccc", paddingLeft: "16px" }}>
-                <h1>Preview</h1>
-                <div
-                    dangerouslySetInnerHTML={{
-                        __html: previewHTML, // MarkdownをHTMLに変換して表示
-                    }}
-                />
-            </div>
+                    <button className={styles.saveButton} onClick={handleSave}>
+                        Save
+                    </button>
+                </>
+            ) : (
+                <p>You do not have permission to edit this document.</p>
+            )}
         </div>
     );
 };

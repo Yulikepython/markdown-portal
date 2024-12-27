@@ -4,6 +4,8 @@ import serverlessHttp from "serverless-http";
 
 // Express アプリを作成
 const app = express();
+app.use(express.json()); // JSON ボディの解析を有効にする
+
 app.use((req, res, next) => {
     const userId = req.headers['x-user-id'];
     req.user = userId ? { id: userId as string } : undefined;
@@ -41,6 +43,7 @@ app.get("/api/docs/:id", (req: Request, res: Response) => {
 });
 
 app.post("/api/docs", (req: Request, res: Response) => {
+    console.log("Request body:", req.body);
     const { title, content } = req.body;
     const newDoc: Document = {
         id: (documents.length + 1).toString(),
@@ -53,6 +56,7 @@ app.post("/api/docs", (req: Request, res: Response) => {
 });
 
 app.put("/api/docs/:id", (req: Request, res: Response) => {
+    console.log("Request body:", req.body);
     const { title, content } = req.body;
     const doc = documents.find((d) => d.id === req.params.id);
     if (doc) {
@@ -73,6 +77,8 @@ app.delete("/api/docs/:id", (req: Request, res: Response) => {
         res.status(404).json({ message: "Document not found" });
     }
 });
+
+
 
 // Lambdaハンドラーを作成
 export const handler: Handler = serverlessHttp(app) as Handler;
