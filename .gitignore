@@ -29,3 +29,5 @@ backend/node_modules/
 backend/.serverless/
 
 frontend/.vite/
+
+markdown-portal_project_summary.txt
