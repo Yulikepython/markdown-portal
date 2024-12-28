@@ -31,3 +31,5 @@ backend/.serverless/
 frontend/.vite/
 
 markdown-portal_project_summary.txt
+
+frontend/src/config/amplifyConfigure.ts

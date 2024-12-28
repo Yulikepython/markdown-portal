@@ -4,13 +4,8 @@ import { getDocumentById, createDocument, updateDocument } from "../services/api
 import MdEditor from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
 import ReactMarkdown from "react-markdown";
-
 import styles from "../styles/DocPage.module.scss";
-
-const mockUser = {
-    id: "user1",
-    isAuthenticated: true,
-};
+import { useAuthContext } from "../context/AuthContext";
 
 const extractTitle = (markdown: string): string => {
     const lines = markdown.split('\n');
@@ -23,6 +18,7 @@ const extractTitle = (markdown: string): string => {
 };
 
 const DocPage: React.FC = () => {
+    const { user, isSignedIn } = useAuthContext();  // ここで取得
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
@@ -36,30 +32,26 @@ const DocPage: React.FC = () => {
                 try {
                     const data = await getDocumentById(id);
                     setContent(data.content);
-                    setIsEditable(data.userId === mockUser.id && mockUser.isAuthenticated);
+
+                    // user?.attributes?.sub と userId が一致するか
+                    setIsEditable(data.userId === user?.userId && isSignedIn);
                 } catch (err) {
                     console.error(err);
                     setError("Failed to load the document.");
                 }
             }
         };
-
         fetchDocument();
-    }, [id]);
+    }, [id, user, isSignedIn]);
 
     const handleSave = async () => {
         try {
-            console.log("Saving document...");
-            console.log("Content:", content);
-
             const title = extractTitle(content);
-            console.log("Extracted Title:", title);
-
             if (id) {
-                console.log("Updating existing document with ID:", id);
+                // 既存更新
                 await updateDocument(id, title, content);
             } else {
-                console.log("Creating a new document");
+                // 新規作成
                 await createDocument(title, content);
             }
             navigate("/");
@@ -85,7 +77,6 @@ const DocPage: React.FC = () => {
                             renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
                         />
                     </div>
-
                     <button className={styles.saveButton} onClick={handleSave}>
                         Save
                     </button>
