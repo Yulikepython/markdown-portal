@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getDocumentById, createDocument, updateDocument } from "../services/apiClient";
+import { useApiClient } from "../services/apiClient";
 import MdEditor from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
 import ReactMarkdown from "react-markdown";
@@ -26,12 +26,13 @@ const DocPage: React.FC = () => {
     const [content, setContent] = useState<string>("");
     const [isEditable, setIsEditable] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const api = useApiClient(user?.userId);
 
     useEffect(() => {
         const fetchDocument = async () => {
             if (id) {
                 try {
-                    const data = await getDocumentById(id);
+                    const data = await api.getDocumentById(id);
                     setContent(data.content);
 
                     setIsEditable(data.userId === user?.userId && isSignedIn);
@@ -48,9 +49,9 @@ const DocPage: React.FC = () => {
         try {
             const title = extractTitle(content);
             if (id) {
-                await updateDocument(id, title, content);
+                await api.updateDocument(id, title, content);
             } else {
-                await createDocument(title, content);
+                await api.createDocument(title, content);
             }
             navigate("/");
         } catch (err) {

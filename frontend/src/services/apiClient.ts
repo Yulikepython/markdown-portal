@@ -1,63 +1,63 @@
 import axios from "axios";
+import {useMemo} from "react";
 
 const stage = process.env.NODE_ENV === "production" ? "" : "/dev";
 
-// Axios インスタンスを作成
-const apiClient = axios.create({
-    baseURL: `http://localhost:3000${stage}/api`, // API Gateway のエンドポイント
-    headers: { "Content-Type": "application/json" },
-});
+export const useApiClient = (userId: string | undefined) => {
+    return useMemo(() => {
+        const apiClient = axios.create({
+            baseURL: `http://localhost:3000${stage}/api`,
+            headers: {
+                "Content-Type": "application/json",
+                "x-user-id": userId || "anonymous"
+            },
+        });
 
-// ドキュメント一覧取得
-export const getDocuments = async (): Promise<any[]> => {
-    try {
-        const response = await apiClient.get("/docs");
-        return response.data; // サーバーからのデータをそのまま返す
-    } catch (error) {
-        console.error("Error fetching documents:", error);
-        throw error; // 呼び出し元でエラーを処理
-    }
-};
-
-// ID指定でドキュメント取得
-export const getDocumentById = async (id: string): Promise<any> => {
-    try {
-        const response = await apiClient.get(`/docs/${id}`);
-        return response.data;
-    } catch (error) {
-        console.error(`Error fetching document with ID ${id}:`, error);
-        throw error;
-    }
-};
-
-// 新規ドキュメント作成
-export const createDocument = async (title: string, content: string): Promise<any> => {
-    try {
-        const response = await apiClient.post("/docs", { title, content });
-        return response.data;
-    } catch (error) {
-        console.error("Error creating document:", error);
-        throw error;
-    }
-};
-
-// ドキュメント更新
-export const updateDocument = async (id: string, title: string, content: string): Promise<any> => {
-    try {
-        const response = await apiClient.put(`/docs/${id}`, { title, content });
-        return response.data;
-    } catch (error) {
-        console.error(`Error updating document with ID ${id}:`, error);
-        throw error;
-    }
-};
-
-// ドキュメント削除
-export const deleteDocument = async (id: string): Promise<void> => {
-    try {
-        await apiClient.delete(`/docs/${id}`);
-    } catch (error) {
-        console.error(`Error deleting document with ID ${id}:`, error);
-        throw error;
-    }
+        return {
+            getDocuments: async (): Promise<any[]> => {
+                try {
+                    const response = await apiClient.get("/docs");
+                    return response.data;
+                } catch (error) {
+                    console.error("Error fetching documents:", error);
+                    throw error;
+                }
+            },
+            getDocumentById: async (doc_id: string): Promise<any> => {
+                try {
+                    const response = await apiClient.get(`/docs/${doc_id}`);
+                    return response.data;
+                } catch (error) {
+                    console.error(`Error fetching document with ID ${doc_id}:`, error);
+                    throw error;
+                }
+            },
+            createDocument: async (title: string, content: string): Promise<any> => {
+                try {
+                    const response = await apiClient.post("/docs", { title, content });
+                    return response.data;
+                } catch (error) {
+                    console.error("Error creating document:", error);
+                    throw error;
+                }
+            },
+            updateDocument: async (id: string, title: string, content: string): Promise<any> => {
+                try {
+                    const response = await apiClient.put(`/docs/${id}`, { title, content });
+                    return response.data;
+                } catch (error) {
+                    console.error(`Error updating document with ID ${id}:`, error);
+                    throw error;
+                }
+            },
+            deleteDocument: async (id: string): Promise<void> => {
+                try {
+                    await apiClient.delete(`/docs/${id}`);
+                } catch (error) {
+                    console.error(`Error deleting document with ID ${id}:`, error);
+                    throw error;
+                }
+            },
+        };
+    }, [userId]);
 };

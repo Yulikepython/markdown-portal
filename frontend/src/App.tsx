@@ -19,17 +19,17 @@ const App: React.FC = () => {
 };
 
 const MainRouter: React.FC = () => {
-    const { user, isSignedIn } = useAuthContext();
+    const { isSignedIn, userEmail } = useAuthContext();
 
     return (
         <Router>
             <div className="navbar">
                 <Link to="/" className="logo">
-                    Doc Manager
+                    Markdown Portal
                 </Link>
                 {isSignedIn ? (
                     <div className="auth-info">
-                        <span>{`Logged in as: ${user?.email}`}</span>
+                        <span>{`Logged in as: ${userEmail}`}</span>
                         <button onClick={() => signOut()}>Logout</button>
                     </div>
                 ) : (
