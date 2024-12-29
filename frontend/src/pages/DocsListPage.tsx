@@ -2,7 +2,17 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {useApiClient} from "../services/apiClient";
 import { useAuthContext } from "../context/AuthContext";
+import {AxiosError} from "axios";
 
+const extractTitle = (markdown: string): string => {
+    const lines = markdown.split("\n");
+    for (const line of lines) {
+        if (/^#\s/.test(line)) { // H1（# のみ）の行をチェック
+            return line.replace(/^#\s*/, "").trim(); // H1部分を取り出す
+        }
+    }
+    return markdown.substring(0, 20).trim() || "Untitled"; // デフォルトタイトル
+};
 
 const DocsListPage: React.FC = () => {
     const [documents, setDocuments] = useState<any[]>([]); //eslint-disable-line
@@ -11,13 +21,29 @@ const DocsListPage: React.FC = () => {
     const api = useApiClient(user?.userId);
 
     useEffect(() => {
+        console.log('DocsListPage.tsx');
         const fetchDocs = async () => {
             try {
                 const data = await api.getDocuments();
                 setDocuments(data);
-            } catch (err) {
-                setError("Failed to fetch documents. Please try again.");
-                console.error(err);
+            } catch (error) {
+                if (error instanceof AxiosError) {
+                    switch (error.response?.status) {
+                        case 403:
+                            setError("権限がありません。");
+                            break;
+                        case 404:
+                            setError("ドキュメントが見つかりません。");
+                            break;
+                        case 500:
+                            setError("Server error occurred");
+                            break;
+                        default:
+                            setError(`Failed to fetch documents: ${error.message}`);
+                    }
+                } else {
+                    setError("An unexpected error occurred");
+                }
             }
         };
         fetchDocs().then();
@@ -35,8 +61,8 @@ const DocsListPage: React.FC = () => {
                     <ul>
                         {documents.map((doc) => (
                             <li key={doc.id}>
-                                <Link to={`/docs/${doc.id}`}>
-                                    <strong>{doc.title}</strong>
+                                <Link to={`/docs/${doc.slug}`}>
+                                    <strong>{extractTitle(doc.content)}</strong>
                                 </Link>
                             </li>
                         ))}

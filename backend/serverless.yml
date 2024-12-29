@@ -1,3 +1,5 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: itcmedia
 service: markdown-portal-backend
 
 provider:
@@ -16,17 +18,21 @@ functions:
           path: api/docs
           method: get
       - http:
-          path: api/docs/{id}
+          path: api/docs/{slug}
           method: get
       - http:
           path: api/docs
           method: post
       - http:
-          path: api/docs/{id}
+          path: api/docs/{slug}
           method: put
       - http:
-          path: api/docs/{id}
+          path: api/docs/{slug}
           method: delete
+      - http:
+          path: api/documents/{slug}
+          method: get
+
 
 plugins:
   - serverless-offline # ローカル環境でのテスト用

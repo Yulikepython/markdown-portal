@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import DocsListPage from "./pages/DocsListPage";
 import DocPage from "./pages/DocPage";
+import PublicDocumentPage from "./pages/PublicDocumentPage.tsx";
 
 import { Amplify } from "aws-amplify";
 import { signInWithRedirect, signOut } from "aws-amplify/auth";
@@ -38,8 +39,9 @@ const MainRouter: React.FC = () => {
             </div>
             <Routes>
                 <Route path="/" element={<DocsListPage />} />
-                <Route path="/docs/:id" element={<DocPage />} />
+                <Route path="/docs/:slug" element={<DocPage />} />
                 <Route path="/docs/new" element={<DocPage />} />
+                <Route path="/documents/:slug" element={<PublicDocumentPage />} />
             </Routes>
         </Router>
     );

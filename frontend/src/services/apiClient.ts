@@ -13,6 +13,18 @@ export const useApiClient = (userId: string | undefined) => {
             },
         });
 
+        apiClient.interceptors.response.use(
+            response => response,
+            error => {
+                if (axios.isAxiosError(error) && error.response?.status === 403) {
+                    // グローバルなログ記録
+                    console.error("Permission denied");
+
+                }
+                return Promise.reject(error);
+            }
+        );
+
         return {
             getDocuments: async (): Promise<any[]> => {
                 try {
@@ -23,38 +35,47 @@ export const useApiClient = (userId: string | undefined) => {
                     throw error;
                 }
             },
-            getDocumentById: async (doc_id: string): Promise<any> => {
+            getDocumentBySlug: async (doc_slug: string): Promise<any> => {
                 try {
-                    const response = await apiClient.get(`/docs/${doc_id}`);
+                    const response = await apiClient.get(`/docs/${doc_slug}`);
                     return response.data;
                 } catch (error) {
-                    console.error(`Error fetching document with ID ${doc_id}:`, error);
+                    console.error(`Error fetching document with ID ${doc_slug}:`, error);
                     throw error;
                 }
             },
-            createDocument: async (title: string, content: string): Promise<any> => {
+            createDocument: async (content: string): Promise<any> => {
                 try {
-                    const response = await apiClient.post("/docs", { title, content });
+                    const response = await apiClient.post("/docs", { content });
                     return response.data;
                 } catch (error) {
                     console.error("Error creating document:", error);
                     throw error;
                 }
             },
-            updateDocument: async (id: string, title: string, content: string): Promise<any> => {
+            updateDocument: async (doc_slug: string, content: string, isPublic: boolean): Promise<any> => {
                 try {
-                    const response = await apiClient.put(`/docs/${id}`, { title, content });
+                    const response = await apiClient.put(`/docs/${doc_slug}`, { content, isPublic });
                     return response.data;
                 } catch (error) {
-                    console.error(`Error updating document with ID ${id}:`, error);
+                    console.error(`Error updating document with ID ${doc_slug}:`, error);
                     throw error;
                 }
             },
-            deleteDocument: async (id: string): Promise<void> => {
+            deleteDocument: async (doc_slug: string): Promise<void> => {
                 try {
-                    await apiClient.delete(`/docs/${id}`);
+                    await apiClient.delete(`/docs/${doc_slug}`);
                 } catch (error) {
-                    console.error(`Error deleting document with ID ${id}:`, error);
+                    console.error(`Error deleting document with ID ${doc_slug}:`, error);
+                    throw error;
+                }
+            },
+            getPublicDocumentBySlug: async (doc_slug: string): Promise<any> => {
+                try {
+                    const response = await apiClient.get(`/documents/${doc_slug}`);
+                    return response.data;
+                } catch (error) {
+                    console.error(`Error fetching document with ID ${doc_slug}:`, error);
                     throw error;
                 }
             },

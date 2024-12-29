@@ -33,3 +33,9 @@ frontend/.vite/
 markdown-portal_project_summary.txt
 
 frontend/src/config/amplifyConfigure.ts
+
+backend/dist/
+
+backend/.summaryignore
+
+backend/backend_project_summary.txt

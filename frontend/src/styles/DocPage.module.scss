@@ -82,3 +82,22 @@ button {
   cursor: pointer;
   font-size: 14px;
 }
+
+.pdfContainerParent {
+  width:100%;
+}
+
+.pdfContainer {
+  width:85%;
+  max-width:1200px;
+  margin: 50px auto;
+  border: 1px solid #ccc; /* 薄いグレーの枠線 */
+  border-radius: 8px; /* 角を少し丸める */
+  padding: 20px; /* 内側の余白 */
+  background-color: #f9f9f9; /* 少し明るい背景色 */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 少し影をつけて立体感 */
+  font-family: "Arial", sans-serif; /* フォントを指定 */
+  line-height: 1.6; /* 行間を広げる */
+  overflow: auto; /* コンテンツが長すぎた場合にスクロール可能に */
+}
+

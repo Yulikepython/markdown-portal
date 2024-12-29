@@ -8,60 +8,59 @@ import { useAuthContext } from "../context/AuthContext";
 
 import styles from "../styles/DocPage.module.scss";
 
-const extractTitle = (markdown: string): string => {
-    const lines = markdown.split("\n");
-    for (const line of lines) {
-        if (line.startsWith("#")) {
-            return line.replace(/^#+\s*/, "").trim();
-        }
-    }
-    return markdown.substring(0, 20).trim() || "Untitled";
-};
 
 const DocPage: React.FC = () => {
     const { user, isSignedIn } = useAuthContext();
-    const { id } = useParams<{ id: string }>();
+    const { slug } = useParams<{ slug: string }>();
     const navigate = useNavigate();
 
     const [content, setContent] = useState<string>("");
+    const [isPublic, setIsPublic] = useState<boolean>(false);
     const [isEditable, setIsEditable] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const api = useApiClient(user?.userId);
 
     useEffect(() => {
         const fetchDocument = async () => {
-            if (id) {
+            if (slug) {
                 try {
-                    const data = await api.getDocumentById(id);
-                    setContent(data.content);
-
-                    setIsEditable(data.userId === user?.userId && isSignedIn);
+                    const document = await api.getDocumentBySlug(slug);
+                    setContent(document.content);
+                    setIsEditable(document.userId === user?.userId && isSignedIn);
+                    setIsPublic(document.isPublic);
                 } catch (err) {
                     console.error(err);
                     setError("Failed to load the document.");
                 }
             }
         };
-        fetchDocument();
-    }, [id, user, isSignedIn]);
+        fetchDocument().then();
+    }, [slug, user, isSignedIn, api]);
+
+    //チェックボックスを反映する
+    const handleCheck = () => {
+        setIsPublic(!isPublic);
+    }
 
     const handleSave = async () => {
         try {
-            const title = extractTitle(content);
-            if (id) {
-                await api.updateDocument(id, title, content);
+            if (slug) {
+                await api.updateDocument(slug, content, isPublic);
             } else {
-                await api.createDocument(title, content);
+                await api.createDocument(content);
             }
             navigate("/");
-        } catch (err) {
-            console.error("Error during save:", err);
+        } catch (err) { //eslint-disable-line
             setError("Failed to save the document.");
         }
     };
 
     if (error) {
-        return <div className={styles.errorMessage}>{error}</div>;
+        return (
+            <>
+                <div className={styles.errorMessage}>{error}</div>
+            </>
+        );
     }
 
     return (
@@ -78,6 +77,10 @@ const DocPage: React.FC = () => {
                             onChange={({ text }) => setContent(text)}
                             renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
                         />
+                    </div>
+                    <div className={styles.checkbox}>
+                        <input type="checkbox" id="public" name="public" checked={isPublic} onChange={handleCheck}/>
+                        <label htmlFor="public">公開する</label>
                     </div>
                     <div className={styles.buttonGroup}>
                         <button className={styles.saveButton} onClick={handleSave}>
