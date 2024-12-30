@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "serverless offline",
-    "dev" : "npm run build && npm run start",
+    "create-local-tables": "IS_OFFLINE=true LOCAL_DYNAMO_ENDPOINT=http://localhost:8888 node dist/scripts/createLocalTables.js",
+    "start": "npm run build && npm run create-local-tables && serverless offline",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,6 +14,7 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.716.0",
     "express": "^4.21.2",
     "serverless": "^4.4.18",
     "serverless-http": "^3.2.0"

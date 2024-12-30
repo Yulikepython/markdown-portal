@@ -1,18 +1,34 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: itcmedia
 service: markdown-portal-backend
+org: itcmedia
 
 provider:
   name: aws
   runtime: nodejs18.x
-  region: ap-northeast-1 # お好みのAWSリージョン
+  region: ap-northeast-1
   stage: dev
   environment:
-    DB_CONNECTION_STRING: "your-database-connection-string" # 必要に応じて設定
+    DYNAMO_TABLE_NAME: "DocumentsTable"  # DynamoDB テーブル名
+    IS_OFFLINE: ${self:custom.isOffline}
+    LOCAL_DYNAMO_ENDPOINT: "http://localhost:8888"   # ローカルDynamoDBのエンドポイントを指定
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:BatchGetItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:Scan"
+        - "dynamodb:Query"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}/index/*"
 
 functions:
   docsHandler:
-    handler: src/index.handler
+    handler: dist/index.handler
     events:
       - http:
           path: api/docs
@@ -33,6 +49,26 @@ functions:
           path: api/documents/{slug}
           method: get
 
-
 plugins:
-  - serverless-offline # ローカル環境でのテスト用
+  - serverless-offline
+
+custom:
+  isOfflineMap:
+    dev: 'true'
+    default: 'false'
+  isOffline: ${self:custom.isOfflineMap.${self:provider.stage}, 'false'}  # 修正後
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8888
+      inMemory: true  # インメモリで動作
+      migrate: true   # 起動時にテーブルを作成
+  serverless-offline:
+    httpPort: 3000  # オフラインでのAPIサーバーのポート
+
+resources:
+  Resources:
+    DocumentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties: ${file(dynamodb-table-definition.json)}

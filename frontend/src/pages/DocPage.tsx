@@ -25,9 +25,9 @@ const DocPage: React.FC = () => {
             if (slug) {
                 try {
                     const document = await api.getDocumentBySlug(slug);
-                    setContent(document.content);
-                    setIsEditable(document.userId === user?.userId && isSignedIn);
-                    setIsPublic(document.isPublic);
+                    setContent(document?.content);
+                    setIsEditable(document?.userId === user?.userId && isSignedIn);
+                    setIsPublic(document?.isPublic);
                 } catch (err) {
                     console.error(err);
                     setError("Failed to load the document.");
@@ -35,7 +35,7 @@ const DocPage: React.FC = () => {
             }
         };
         fetchDocument().then();
-    }, [slug, user, isSignedIn, api]);
+    }, [slug, user, isSignedIn, api, document]);
 
     //チェックボックスを反映する
     const handleCheck = () => {

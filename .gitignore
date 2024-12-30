@@ -39,3 +39,5 @@ backend/dist/
 backend/.summaryignore
 
 backend/backend_project_summary.txt
+
+frontend/frontend_project_summary.txt

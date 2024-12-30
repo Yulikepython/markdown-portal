@@ -21,7 +21,6 @@ const DocsListPage: React.FC = () => {
     const api = useApiClient(user?.userId);
 
     useEffect(() => {
-        console.log('DocsListPage.tsx');
         const fetchDocs = async () => {
             try {
                 const data = await api.getDocuments();
@@ -60,7 +59,7 @@ const DocsListPage: React.FC = () => {
                     <h1>あなたのドキュメント一覧</h1>
                     <ul>
                         {documents.map((doc) => (
-                            <li key={doc.id}>
+                            <li key={doc.slug}>
                                 <Link to={`/docs/${doc.slug}`}>
                                     <strong>{extractTitle(doc.content)}</strong>
                                 </Link>
