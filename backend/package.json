@@ -5,8 +5,10 @@
   "scripts": {
     "build": "tsc",
     "create-local-tables": "IS_OFFLINE=true LOCAL_DYNAMO_ENDPOINT=http://localhost:8888 node dist/scripts/createLocalTables.js",
-    "start": "npm run build && npm run create-local-tables && serverless offline",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build && npm run create-local-tables && IS_OFFLINE=true serverless offline --stage local",
+    "deploy-dev": "serverless deploy --stage dev",
+    "deploy-prod": "serverless deploy --stage prod",
+    "test": "jest --coverage"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +24,12 @@
   "devDependencies": {
     "@types/aws-lambda": "^8.10.146",
     "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/supertest": "^6.0.2",
     "@types/uuid": "^10.0.0",
-    "serverless-offline": "^14.4.0"
+    "jest": "^29.7.0",
+    "serverless-offline": "^14.4.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5"
   }
 }
