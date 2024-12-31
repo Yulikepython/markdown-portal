@@ -3,12 +3,13 @@
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import * as fs from 'fs';
 import * as path from 'path';
-import { documents } from '../models/document';  // <= 追加: サンプルデータ
+import { documents } from '../models/document';
 import { Document } from '../types/document';     // <= 追加
 
 const isOffline: boolean = process.env.IS_OFFLINE === 'true';
-const tableDefinitionPath = path.resolve(__dirname, '../../dynamodb-table-definition.json');
-const tableDefinition = JSON.parse(fs.readFileSync(tableDefinitionPath, 'utf-8'));
+const tableDefinitionPath: string = path.resolve(__dirname, '../../dynamodb-table-definition.json');
+const jsonData: string = fs.readFileSync(tableDefinitionPath, 'utf-8') ?? '{}';
+const tableDefinition: any = JSON.parse(jsonData);
 
 const dynamoClient = new DynamoDBClient({
     region: "ap-northeast-1",
@@ -66,10 +67,16 @@ async function insertDefaultDocuments() {
     }
 }
 
-async function main() {
+export async function main() {
     await createTable();
     // テーブルが作成済み or 既に存在するなら、デフォルトデータ投入
     await insertDefaultDocuments();
 }
 
-main();
+// ★テストでなく実行用なら、条件分岐で呼ぶ
+if (require.main === module) {
+    main().catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
+}

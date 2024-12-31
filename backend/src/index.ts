@@ -4,7 +4,7 @@ import { Handler } from 'aws-lambda';
 import { authenticateUser } from './middlewares/auth';
 import { DocumentController } from './controllers/document';
 
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use((req: Request, res: Response, next) => authenticateUser(req, res, next));
 
