@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { DocumentServiceDynamo } from '../services/document';
 
 export class DocumentController {
+
     /**
      * ドキュメント一覧を取得
      */
