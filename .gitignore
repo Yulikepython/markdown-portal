@@ -37,6 +37,7 @@ backend/.summaryignore
 backend/backend_project_summary.txt
 
 frontend/frontend_project_summary.txt
+/backend/coverage/
 
 eslint-plugin-react-hooks
 

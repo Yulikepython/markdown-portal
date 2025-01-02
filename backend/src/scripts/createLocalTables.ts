@@ -121,4 +121,10 @@ async function main() {
     await initDocCounter();
 }
 
-main();
+// ★テストでなく実行用なら、条件分岐で呼ぶ
+if (require.main === module) {
+    main().catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
+}
