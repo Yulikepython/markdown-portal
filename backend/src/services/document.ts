@@ -1,126 +1,229 @@
-import { Document } from '../types/document';
-import { documents } from '../models/document';
+// src/services/document.ts
 
-import {v4 as uuidv4} from 'uuid';
+import {
+    DynamoDBClient,
+    GetItemCommand,
+    PutItemCommand,
+    QueryCommand,
+    DeleteItemCommand,
+    UpdateItemCommand,
+    ReturnValue
+} from "@aws-sdk/client-dynamodb";
+import { v4 as uuidv4 } from "uuid";
 
-export class DocumentService {
+// インターフェースの定義
+export interface Document {
+    userId: string;
+    slug: string;
+    content: string;
+    isPublic: boolean;
+}
+
+// 環境変数の取得と型定義
+const isOffline: boolean = process.env.IS_OFFLINE === 'true';
+const tableName: string = process.env.DYNAMO_TABLE_NAME || "";
+
+// DynamoDB クライアントの設定
+const dynamoClient = new DynamoDBClient({
+    region: "ap-northeast-1",
+    endpoint: isOffline ? process.env.LOCAL_DYNAMO_ENDPOINT : undefined,
+});
+
+export class DocumentServiceDynamo {
     /**
-     * すべてのドキュメントを取得する
-     * ユーザーが所有者のドキュメントのみ
+     * 新規ドキュメントの作成
+     * @param content ドキュメントの内容
+     * @param userId ユーザーID
+     * @returns 作成されたドキュメント
      */
-    static async getDocumentsByOwnUser(userId: string): Promise<Document[]> {
-        return documents.filter(doc => DocumentService.isDocumentMatch_UserId(doc, userId));
-    }
-
-    /**
-     * 指定されたSlugのドキュメントを取得する
-     * ユーザーが所有者の場合のみ取得可能
-     */
-    static getDocumentBySlugAndUserId(slug: string, userId: string): Document | undefined {
-        return documents.find(d => DocumentService.isDocumentMatch_SlugAndUserId(d, slug, userId) );
-    }
-
-    /**
-     * 指定されたSlugのドキュメントを取得する
-     * 公開フラグがtrueの場合のみ取得可能
-     */
-    static getPublicDocumentBySlug(slug: string): Document | undefined {
-        return documents.find(d => DocumentService.isDocumentMatch_SlugAndPublic(d, slug));
-    }
-
-    /**
-     * 新しいドキュメントを作成する
-     */
-    static createDocument(content: string, userId: string): Document {
+    static async createDocument(content: string, userId: string): Promise<Document> {
+        const slug = uuidv4();
         const newDoc: Document = {
-            id: (documents.length + 1).toString(), //increment_id
-            content,
             userId,
+            slug,
+            content,
             isPublic: false,
-            slug: this.generateSlug(),
         };
-        documents.push(newDoc);
+
+        const params = {
+            TableName: tableName,
+            Item: {
+                userId: { S: newDoc.userId },
+                slug: { S: newDoc.slug },
+                content: { S: newDoc.content },
+                isPublic: { BOOL: newDoc.isPublic },
+            },
+        };
+
+        await dynamoClient.send(new PutItemCommand(params));
         return newDoc;
     }
 
     /**
-     * 指定されたSlugのドキュメントを更新する
-     * ユーザーが所有者の場合のみ更新可能
+     * ユーザーのドキュメント一覧取得
+     * @param userId ユーザーID
+     * @returns ユーザーが所有するドキュメントの配列
      */
-    static updateDocument(slug: string, content: string, userId: string, isPublic: boolean): Document | undefined {
-        const doc = documents.find(d => DocumentService.isDocumentMatch_SlugAndUserId(d, slug, userId));
-        if (doc) {
-            doc.content = content;
-            doc.isPublic = isPublic;
-            return doc;
-        }
-        return undefined;
+    static async getDocumentsByOwnUser(userId: string): Promise<Document[]> {
+        const params = {
+            TableName: tableName,
+            KeyConditionExpression: "userId = :uid",
+            ExpressionAttributeValues: {
+                ":uid": { S: userId },
+            },
+        };
+
+        const command = new QueryCommand(params);
+        const result = await dynamoClient.send(command);
+        return result.Items?.map(item => ({
+            userId: item.userId.S!,
+            slug: item.slug.S!,
+            content: item.content.S!,
+            isPublic: item.isPublic.BOOL!,
+        })) || [];
     }
 
     /**
-     * 指定されたslugのドキュメントを削除する
-     * ユーザーが所有者の場合のみ削除可能
+     * slug と userId でドキュメント取得
+     * @param slug ドキュメントのスラッグ
+     * @param userId ユーザーID
+     * @returns ドキュメントまたは null
      */
-    static deleteDocument(slug: string, userId: string): boolean {
-        const index = documents.findIndex(d => DocumentService.isDocumentMatch_SlugAndUserId(d, slug, userId));
-        if (index !== -1) {
-            documents.splice(index, 1);
+    static async getDocumentBySlugAndUserId(slug: string, userId: string): Promise<Document | null> {
+        const params = {
+            TableName: tableName,
+            Key: {
+                userId: { S: userId },
+                slug: { S: slug },
+            },
+        };
+
+        const command = new GetItemCommand(params);
+        const result = await dynamoClient.send(command);
+        if (!result.Item) return null;
+
+        return {
+            userId: result.Item.userId.S!,
+            slug: result.Item.slug.S!,
+            content: result.Item.content.S!,
+            isPublic: result.Item.isPublic.BOOL!,
+        };
+    }
+
+    /**
+     * 公開ドキュメントを slug で取得
+     * @param slug ドキュメントのスラッグ
+     * @returns ドキュメントまたは null
+     */
+    static async getPublicDocumentBySlug(slug: string): Promise<Document | null> {
+        const params = {
+            TableName: tableName,
+            IndexName: "SlugIndex",
+            KeyConditionExpression: "slug = :s",
+            FilterExpression: "isPublic = :p",
+            ExpressionAttributeValues: {
+                ":s": { S: slug },
+                ":p": { BOOL: true },
+            },
+        };
+
+        const command = new QueryCommand(params);
+        const result = await dynamoClient.send(command);
+        if (result.Items && result.Items.length > 0) {
+            const item = result.Items[0];
+            return {
+                userId: item.userId.S!,
+                slug: item.slug.S!,
+                content: item.content.S!,
+                isPublic: item.isPublic.BOOL!,
+            };
+        }
+        return null;
+    }
+
+    /**
+     * ドキュメントの更新
+     * @param slug ドキュメントのスラッグ
+     * @param content 更新する内容（nullの場合は更新しない）
+     * @param userId ユーザーID
+     * @param isPublic 公開フラグ
+     * @returns 更新されたドキュメントまたは null
+     */
+    static async updateDocument(slug: string, content: string | null, userId: string, isPublic: boolean): Promise<Document | null> {
+        let updateExpression = "";
+        const expressionAttributeValues: { [key: string]: any } = {
+            ":p": { BOOL: isPublic },
+        };
+
+        if (content !== null) {
+            updateExpression = "set isPublic = :p, content = :c";
+            expressionAttributeValues[":c"] = { S: content };
+        } else {
+            updateExpression = "set isPublic = :p";
+        }
+
+        const params = {
+            TableName: tableName,
+            Key: {
+                userId: { S: userId },
+                slug: { S: slug },
+            },
+            UpdateExpression: updateExpression,
+            ExpressionAttributeValues: expressionAttributeValues,
+            ReturnValues: ReturnValue.ALL_NEW,
+        };
+
+        try {
+            const command = new UpdateItemCommand(params);
+            const result = await dynamoClient.send(command);
+            if (result.Attributes) {
+                return {
+                    userId: result.Attributes.userId.S!,
+                    slug: result.Attributes.slug.S!,
+                    content: result.Attributes.content.S!,
+                    isPublic: result.Attributes.isPublic.BOOL!,
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error("Error updating document:", error);
+            return null;
+        }
+    }
+
+    /**
+     * ドキュメントの削除
+     * @param slug ドキュメントのスラッグ
+     * @param userId ユーザーID
+     * @returns 削除に成功した場合は true、失敗した場合は false
+     */
+    static async deleteDocument(slug: string, userId: string): Promise<boolean> {
+        const params = {
+            TableName: tableName,
+            Key: {
+                userId: { S: userId },
+                slug: { S: slug },
+            },
+        };
+
+        try {
+            const command = new DeleteItemCommand(params);
+            await dynamoClient.send(command);
             return true;
+        } catch (error) {
+            console.error("Error deleting document:", error);
+            return false;
         }
-        return false;
     }
 
     /**
-     * ドキュメントを公開する
-     * */
-    static makePublic(slug: string, userId: string): Document | undefined {
-        const doc = documents.find(d => DocumentService.isDocumentMatch_SlugAndUserId(d, slug, userId));
-        if (doc) {
-            doc.isPublic = true;
-            return doc;
-        }
-        return undefined;
-    }
-
-    /**
-     * ドキュメントを非公開にする
-     * */
-    static makePrivate(slug: string, userId: string): Document | undefined {
-        const doc = documents.find(d => DocumentService.isDocumentMatch_SlugAndUserId(d, slug, userId));
-        if (doc) {
-            doc.isPublic = false;
-            return doc;
-        }
-        return undefined;
-    }
-
-
-    /**
-     * タイトルからスラグを生成する
-     * @private
+     * ドキュメントが存在するか確認
+     * @param slug ドキュメントのスラッグ
+     * @param userId ユーザーID
+     * @returns 存在する場合は true、存在しない場合は false
      */
-    private static generateSlug(): string {
-        return uuidv4();
-    }
-
-    /**
-     * ユーザーIDがマッチするかどうかを確認する
-     * */
-    static isDocumentMatch_UserId(document: Document, userId: string): boolean {
-        return document.userId === userId;
-    }
-
-    /**
-     * ドキュメントの所有者を確認する
-     */
-    static isDocumentMatch_SlugAndUserId(document: Document, slug: string, userId: string): boolean {
-        return document.slug === slug && DocumentService.isDocumentMatch_UserId(document, userId);
-    }
-
-    /**
-     * ドキュメントのスラッグと公開フラグを確認する
-     * */
-    static isDocumentMatch_SlugAndPublic(document: Document, slug: string): boolean {
-        return document.slug === slug && document.isPublic;
+    static async isDocumentExist(slug: string, userId: string): Promise<boolean> {
+        const doc = await this.getDocumentBySlugAndUserId(slug, userId);
+        return doc !== null;
     }
 }

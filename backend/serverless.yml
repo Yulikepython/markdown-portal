@@ -1,18 +1,39 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: itcmedia
 service: markdown-portal-backend
+org: itcmedia
 
 provider:
   name: aws
   runtime: nodejs18.x
-  region: ap-northeast-1 # お好みのAWSリージョン
-  stage: dev
+  region: ap-northeast-1
+
+  # --stage オプションが指定されなければ "dev" にする
+  stage: ${opt:stage, 'dev'}
+
   environment:
-    DB_CONNECTION_STRING: "your-database-connection-string" # 必要に応じて設定
+    # ブランチ(ステージ)ごとにテーブル名を変える
+    DYNAMO_TABLE_NAME: "DocumentsTable-${self:provider.stage}"
+    # ローカルで serverless offline を起動するときは、手動で IS_OFFLINE=true をセット
+    IS_OFFLINE: ${env:IS_OFFLINE, 'false'}
+    LOCAL_DYNAMO_ENDPOINT: "http://localhost:8888"
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:BatchGetItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:Scan"
+        - "dynamodb:Query"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}/index/*"
 
 functions:
   docsHandler:
-    handler: src/index.handler
+    handler: dist/index.handler
     events:
       - http:
           path: api/docs
@@ -33,6 +54,43 @@ functions:
           path: api/documents/{slug}
           method: get
 
-
 plugins:
-  - serverless-offline # ローカル環境でのテスト用
+  - serverless-offline
+
+# CloudFormation リソースとして DynamoDB を作る場合
+# "DocumentsTable" の宣言に「TableName」を上書きし、stage ごとに違うテーブルを用意
+resources:
+  Resources:
+    DocumentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        # dynamodb-table-definition.json の中身を展開する書き方
+        # 下記のように YAML で「マージ」できれば理想ですが、単純参照の場合は
+        # TableName を別途上書きする工夫が必要です
+        #
+        # 例: serverless ではこんな書き方も可
+        #   Properties: ${file(dynamodb-table-definition.json)}
+        #
+        # もし上書きマージをしたい場合は、dynamodb-table-definition.json をやめ
+        # 直接ここに BillingMode, AttributeDefinitions, KeySchema 等を書く方が楽です
+        #
+        # ここでは「名前だけ上書きする例」として記載します
+        TableName: ${self:provider.environment.DYNAMO_TABLE_NAME}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: slug
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: slug
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: SlugIndex
+            KeySchema:
+              - AttributeName: slug
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
