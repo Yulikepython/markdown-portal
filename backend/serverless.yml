@@ -5,11 +5,16 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: ap-northeast-1
-  stage: dev
+
+  # --stage オプションが指定されなければ "dev" にする
+  stage: ${opt:stage, 'dev'}
+
   environment:
-    DYNAMO_TABLE_NAME: "DocumentsTable"  # DynamoDB テーブル名
-    IS_OFFLINE: ${self:custom.isOffline}
-    LOCAL_DYNAMO_ENDPOINT: "http://localhost:8888"   # ローカルDynamoDBのエンドポイントを指定
+    # ブランチ(ステージ)ごとにテーブル名を変える
+    DYNAMO_TABLE_NAME: "DocumentsTable-${self:provider.stage}"
+    # ローカルで serverless offline を起動するときは、手動で IS_OFFLINE=true をセット
+    IS_OFFLINE: ${env:IS_OFFLINE, 'false'}
+    LOCAL_DYNAMO_ENDPOINT: "http://localhost:8888"
 
   iamRoleStatements:
     - Effect: "Allow"
@@ -52,23 +57,40 @@ functions:
 plugins:
   - serverless-offline
 
-custom:
-  isOfflineMap:
-    dev: 'true'
-    default: 'false'
-  isOffline: ${self:custom.isOfflineMap.${self:provider.stage}, 'false'}  # 修正後
-  dynamodb:
-    stages:
-      - dev
-    start:
-      port: 8888
-      inMemory: true  # インメモリで動作
-      migrate: true   # 起動時にテーブルを作成
-  serverless-offline:
-    httpPort: 3000  # オフラインでのAPIサーバーのポート
-
+# CloudFormation リソースとして DynamoDB を作る場合
+# "DocumentsTable" の宣言に「TableName」を上書きし、stage ごとに違うテーブルを用意
 resources:
   Resources:
     DocumentsTable:
       Type: AWS::DynamoDB::Table
-      Properties: ${file(dynamodb-table-definition.json)}
+      Properties:
+        # dynamodb-table-definition.json の中身を展開する書き方
+        # 下記のように YAML で「マージ」できれば理想ですが、単純参照の場合は
+        # TableName を別途上書きする工夫が必要です
+        #
+        # 例: serverless ではこんな書き方も可
+        #   Properties: ${file(dynamodb-table-definition.json)}
+        #
+        # もし上書きマージをしたい場合は、dynamodb-table-definition.json をやめ
+        # 直接ここに BillingMode, AttributeDefinitions, KeySchema 等を書く方が楽です
+        #
+        # ここでは「名前だけ上書きする例」として記載します
+        TableName: ${self:provider.environment.DYNAMO_TABLE_NAME}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: slug
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: slug
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: SlugIndex
+            KeySchema:
+              - AttributeName: slug
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL

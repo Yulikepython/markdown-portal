@@ -1,8 +1,8 @@
 import axios from "axios";
 import {useMemo} from "react";
 
-const stage = process.env.NODE_ENV === "production" ? "" : "/dev";
-
+const stage: string = import.meta.env.VITE_API_STAGE ? `/${import.meta.env.VITE_API_STAGE}` : "";
+console.log('stage from env: ', stage);
 export const useApiClient = (userId: string | undefined) => {
     return useMemo(() => {
         const apiClient = axios.create({
@@ -27,6 +27,7 @@ export const useApiClient = (userId: string | undefined) => {
 
         return {
             getDocuments: async (): Promise<any[]> => {
+                console.log('apiClients: ', apiClient);
                 try {
                     const response = await apiClient.get("/docs");
                     return response.data;

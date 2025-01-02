@@ -10,9 +10,11 @@ const isOffline: boolean = process.env.IS_OFFLINE === 'true';
 const tableDefinitionPath = path.resolve(__dirname, '../../dynamodb-table-definition.json');
 const tableDefinition = JSON.parse(fs.readFileSync(tableDefinitionPath, 'utf-8'));
 
+tableDefinition.TableName = process.env.DYNAMO_TABLE_NAME || tableDefinition.TableName;
+
 const dynamoClient = new DynamoDBClient({
     region: "ap-northeast-1",
-    endpoint: isOffline ? process.env.LOCAL_DYNAMO_ENDPOINT : undefined, // ここも調整
+    endpoint: isOffline ? process.env.LOCAL_DYNAMO_ENDPOINT : undefined,
 });
 
 async function createTable() {
