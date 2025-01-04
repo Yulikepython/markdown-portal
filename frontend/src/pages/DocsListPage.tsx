@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {useApiClient} from "../services/apiClient";
-import { useAuthContext } from "../context/AuthContext";
+import { useAuthContext } from "../context/AuthContext.bridge";
 import {AxiosError} from "axios";
 
 const extractTitle = (markdown: string): string => {
@@ -18,7 +18,7 @@ const DocsListPage: React.FC = () => {
     const [documents, setDocuments] = useState<any[]>([]); //eslint-disable-line
     const [error, setError] = useState<string | null>(null);
     const { user, isSignedIn } = useAuthContext();
-    const api = useApiClient(user?.userId);
+    const api = useApiClient();
 
     useEffect(() => {
         const fetchDocs = async () => {
@@ -46,7 +46,7 @@ const DocsListPage: React.FC = () => {
             }
         };
         fetchDocs().then();
-    }, [user?.userId, api]);
+    }, [api, user]);
 
     if (error) {
         return <div style={{ color: "red" }}>{error}</div>;

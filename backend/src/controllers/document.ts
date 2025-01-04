@@ -41,10 +41,6 @@ export class DocumentController {
      */
     static async getDocumentBySlugOfPublic(req: Request, res: Response) {
         try {
-            console.log(req.params.slug);
-            console.log('getDocumentBySlugOfPublic');
-
-
             const doc = await DocumentServiceDynamo.getPublicDocumentBySlug(req.params.slug);
             res.json(doc);
         } catch (error) {
@@ -87,8 +83,6 @@ export class DocumentController {
             // }
 
             const { content, isPublic } = req.body;
-            console.log('isPublic:', isPublic);
-            console.log('request: ', req.body);
             const { slug } = req.params;
 
             // バリデーション

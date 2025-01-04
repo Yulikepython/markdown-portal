@@ -7,4 +7,9 @@ export default defineConfig({
   define: {
     "process.env.VITE_API_STAGE": JSON.stringify(process.env.VITE_API_STAGE || ""),
   },
+  resolve: {
+    alias: {
+      './runtimeConfig': './runtimeConfig.browser',
+    },
+  },
 })

@@ -1,33 +1,31 @@
+// apiClient.ts
 import axios from "axios";
-import {useMemo} from "react";
+import { fetchAuthSession, AuthSession } from "aws-amplify/auth";
+import { useMemo } from "react";
 
 const stage: string = import.meta.env.VITE_API_STAGE ? `/${import.meta.env.VITE_API_STAGE}` : "";
-console.log('stage from env: ', stage);
-export const useApiClient = (userId: string | undefined) => {
-    return useMemo(() => {
+export const useApiClient = () => {
+    return useMemo( () => {
         const apiClient = axios.create({
             baseURL: `http://localhost:3000${stage}/api`,
             headers: {
                 "Content-Type": "application/json",
-                "x-user-id": userId || "anonymous"
             },
         });
 
-        apiClient.interceptors.response.use(
-            response => response,
-            error => {
-                if (axios.isAxiosError(error) && error.response?.status === 403) {
-                    // グローバルなログ記録
-                    console.error("Permission denied");
-
-                }
-                return Promise.reject(error);
+        apiClient.interceptors.request.use(async (config) => {
+            try {
+                const session: AuthSession = await fetchAuthSession();
+                const idToken = session?.tokens?.idToken;
+                config.headers.Authorization = `Bearer ${idToken}`;
+            } catch (err) {
+                console.warn("No current session found:", err);
             }
-        );
+            return config;
+        });
 
         return {
-            getDocuments: async (): Promise<any[]> => {
-                console.log('apiClients: ', apiClient);
+            getDocuments: async (): Promise<any[]> => { //eslint-disable-line
                 try {
                     const response = await apiClient.get("/docs");
                     return response.data;
@@ -36,7 +34,7 @@ export const useApiClient = (userId: string | undefined) => {
                     throw error;
                 }
             },
-            getDocumentBySlug: async (doc_slug: string): Promise<any> => {
+            getDocumentBySlug: async (doc_slug: string): Promise<any> => { //eslint-disable-line
                 try {
                     const response = await apiClient.get(`/docs/${doc_slug}`);
                     return response.data;
@@ -45,7 +43,7 @@ export const useApiClient = (userId: string | undefined) => {
                     throw error;
                 }
             },
-            createDocument: async (content: string): Promise<any> => {
+            createDocument: async (content: string): Promise<any> => { //eslint-disable-line
                 try {
                     const response = await apiClient.post("/docs", { content });
                     return response.data;
@@ -54,7 +52,7 @@ export const useApiClient = (userId: string | undefined) => {
                     throw error;
                 }
             },
-            updateDocument: async (doc_slug: string, content: string, isPublic: boolean): Promise<any> => {
+            updateDocument: async (doc_slug: string, content: string, isPublic: boolean): Promise<any> => { //eslint-disable-line
                 try {
                     const response = await apiClient.put(`/docs/${doc_slug}`, { content, isPublic });
                     return response.data;
@@ -71,7 +69,7 @@ export const useApiClient = (userId: string | undefined) => {
                     throw error;
                 }
             },
-            getPublicDocumentBySlug: async (doc_slug: string): Promise<any> => {
+            getPublicDocumentBySlug: async (doc_slug: string): Promise<any> => { //eslint-disable-line
                 try {
                     const response = await apiClient.get(`/documents/${doc_slug}`);
                     return response.data;
@@ -81,5 +79,5 @@ export const useApiClient = (userId: string | undefined) => {
                 }
             },
         };
-    }, [userId]);
+    }, []);
 };

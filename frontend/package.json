@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev:offline": "vite --mode offline",
+    "dev:dev": "vite --mode develop",
+    "dev:prod": "vite --mode production",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
