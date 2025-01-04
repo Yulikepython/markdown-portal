@@ -17,7 +17,7 @@ provider:
     DYNAMO_TABLE_NAME: "DocumentsTable-${self:provider.stage}"
     # ローカルで serverless offline を起動するときは、手動で IS_OFFLINE=true をセット
     IS_OFFLINE: ${env:IS_OFFLINE, 'false'}
-    LOCAL_DYNAMO_ENDPOINT: ${env:LOCAL_DYNAMO_ENDPOINT, 'http://localhost:8888'}
+    DYNAMO_ENDPOINT: ${env:DYNAMO_ENDPOINT, 'http://localhost:8888'}
     COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, 'local-offline-upid'}
     COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, 'local-offline-cid'}
     AWS_REGION: ${env:AWS_REGION, 'ap-northeast-1'}

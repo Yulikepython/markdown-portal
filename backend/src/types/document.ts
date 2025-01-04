@@ -1,7 +1,8 @@
 export interface Document {
-    id: string;
+    id: number;
     content: string;
     isPublic: boolean;
     slug: string;
     userId: string;
+    schemaVersion: number;
 }

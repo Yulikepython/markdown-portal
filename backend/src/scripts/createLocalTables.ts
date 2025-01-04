@@ -13,8 +13,8 @@ const tableDefinition = JSON.parse(fs.readFileSync(tableDefinitionPath, 'utf-8')
 tableDefinition.TableName = process.env.DYNAMO_TABLE_NAME || tableDefinition.TableName;
 
 const dynamoClient = new DynamoDBClient({
-    region: "ap-northeast-1",
-    endpoint: isOffline ? process.env.LOCAL_DYNAMO_ENDPOINT : undefined,
+    region: process.env.AWS_REGION,
+    endpoint: isOffline ? process.env.DYNAMO_ENDPOINT : undefined,
 });
 
 async function createTable() {
@@ -43,10 +43,12 @@ async function putIfNotExists(doc: Document) {
         const params = {
             TableName: tableDefinition.TableName,
             Item: {
+                id: { N: doc.id.toString() },
                 userId: { S: doc.userId },
                 slug:   { S: doc.slug },
                 content: { S: doc.content },
                 isPublic: { BOOL: doc.isPublic },
+                schemaVersion: { N: doc.schemaVersion.toString() },
             },
             // すでに userId+slug が存在する場合は上書きしない
             ConditionExpression: "attribute_not_exists(userId) AND attribute_not_exists(slug)",
