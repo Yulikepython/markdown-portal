@@ -2,41 +2,35 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import DocsListPage from "./pages/DocsListPage";
 import DocPage from "./pages/DocPage";
-import PublicDocumentPage from "./pages/PublicDocumentPage.tsx";
+import PublicDocumentPage from "./pages/PublicDocumentPage";
 
-import { Amplify } from "aws-amplify";
-import { signInWithRedirect, signOut } from "aws-amplify/auth";
-import { config } from "./config/amplifyConfigure.ts";
-import { AuthProvider, useAuthContext } from "./context/AuthContext";
-
-Amplify.configure(config);
+import { CombinedAuthProvider, useAuthContext } from "./context/AuthContext.bridge";
 
 const App: React.FC = () => {
     return (
-        <AuthProvider>
+        <CombinedAuthProvider>
             <MainRouter />
-        </AuthProvider>
+        </CombinedAuthProvider>
     );
 };
 
 const MainRouter: React.FC = () => {
-    const { isSignedIn, userEmail } = useAuthContext();
+    const { isSignedIn, userEmail, login, logout } = useAuthContext();
 
     return (
         <Router>
             <div className="navbar">
-                <Link to="/" className="logo">
-                    Markdown Portal
-                </Link>
+                <Link to="/" className="logo">Markdown Portal</Link>
                 {isSignedIn ? (
                     <div className="auth-info">
-                        <span>{`Logged in as: ${userEmail}`}</span>
-                        <button onClick={() => signOut()}>Logout</button>
+                        <span>{`Logged in as: ${userEmail || "unknown"}`}</span>
+                        <button onClick={logout}>Logout</button>
                     </div>
                 ) : (
-                    <button onClick={() => signInWithRedirect()}>Login</button>
+                    <button onClick={login}>Login</button>
                 )}
             </div>
+
             <Routes>
                 <Route path="/" element={<DocsListPage />} />
                 <Route path="/docs/:slug" element={<DocPage />} />

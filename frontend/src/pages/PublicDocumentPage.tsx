@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useAuthContext } from "../context/AuthContext";
+import { useAuthContext } from "../context/AuthContext.bridge";
 import { useApiClient } from "../services/apiClient";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
@@ -13,7 +13,7 @@ const PublicDocumentPage: React.FC = () => {
     const [content, setContent] = useState<string>("");
     const [error, setError] = useState<string | null>(null);
     const [displaySanitizedHtml, setDisplaySanitizedHtml] = useState<{__html:string} | null>(null);
-    const api = useApiClient(user?.userId);
+    const api = useApiClient();
 
     useEffect(() => {
         const fetchDocument = async () => {

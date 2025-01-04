@@ -4,7 +4,7 @@ import { useApiClient } from "../services/apiClient";
 import MdEditor from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
 import ReactMarkdown from "react-markdown";
-import { useAuthContext } from "../context/AuthContext";
+import { useAuthContext } from "../context/AuthContext.bridge";
 
 import styles from "../styles/DocPage.module.scss";
 
@@ -18,7 +18,7 @@ const DocPage: React.FC = () => {
     const [isPublic, setIsPublic] = useState<boolean>(false);
     const [isEditable, setIsEditable] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const api = useApiClient(user?.userId);
+    const api = useApiClient();
 
     useEffect(() => {
         const fetchDocument = async () => {

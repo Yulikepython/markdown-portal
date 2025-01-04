@@ -6,10 +6,9 @@ import './index.css'
 import App from './App.tsx'
 
 const cognitoAuthConfig = {
-    authority: "https://ap-northeast-11c8s4palp.auth.ap-northeast-1.amazoncognito.com",
-    client_id: "7dvpfam3cauc1li3ncdi8ch75c",
-    // redirect_uri: "https://d84l1y8p4kdic.cloudfront.net",
-    redirect_uri: "http://localhost:3000",
+    authority: `https://${import.meta.env.VITE_COGNITO_DOMAIN}.auth.ap-northeast-1.amazoncognito.com`,
+    client_id: import.meta.env.VITE_COGNITO_CLIENT_ID,
+    redirect_uri: import.meta.env.VITE_COGNITO_REDIRECT_URI,
     response_type: "code",
     scope: "email openid phone",
 };

@@ -10,6 +10,7 @@
  * user4 として 6 件を新規作成（非公開 3 件・公開 3 件）。
  * */
 import { Document } from '../types/document';
+import {sampleUseId} from "../middlewares/authLocal";
 
 // サンプルデータ
 export const documents: Document[] = [
@@ -17,16 +18,16 @@ export const documents: Document[] = [
     {
         id: "1",
         content: "This is the first document.",
-        userId: "27640aa8-9041-7002-c509-d69eb623bffb", // user1
+        userId: sampleUseId, // user1
         isPublic: false,
-        slug: "052bb610-7dc3-4220-af0a-cb13ad04e42c"
+        slug: "05cqb610-7dc3-4220-af0a-cb13ad04e42c"
     },
     {
         id: "2",
         content: "# TEST title test    This is the second document.",
-        userId: "b6631d43-3f5d-43f7-84a5-76a9b8c9820f",
+        userId: sampleUseId,
         isPublic: true,
-        slug: "a7252e70-2799-4b80-b8ee-a2ca2231c660"
+        slug: "a7252e70-2799-4b80-b8ee-a2ca2d431c660"
     },
 
     // 2) user1 (27640aa8-9041-7002-c509-d69eb623bffb)
@@ -35,14 +36,14 @@ export const documents: Document[] = [
     {
         id: "3",
         content: "User1 Private document #2",
-        userId: "27640aa8-9041-7002-c509-d69eb623bffb",
+        userId: sampleUseId,
         isPublic: false,
         slug: "b1e7ddfa-3d0b-4a1f-a3d3-000000000003"
     },
     {
         id: "4",
         content: "User1 Private document #3",
-        userId: "27640aa8-9041-7002-c509-d69eb623bffb",
+        userId: sampleUseId,
         isPublic: false,
         slug: "b1e7ddfa-3d0b-4a1f-a3d3-000000000004"
     },
