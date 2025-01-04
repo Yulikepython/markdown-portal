@@ -1,18 +1,16 @@
-import { ResourcesConfig } from "aws-amplify";
+import { ResourcesConfig, Amplify } from "aws-amplify";
 
-const COGNITO_REGION = "ap-northeast-1";
-const COGNITO_USER_POOL = "ap-northeast-poolid"; //ユーザープールID
-const COGNITO_USER_POOL_CLIENT = "7dvpfam3cauclientidhere";
-
-const COGNITO_DOMAIN_PREFIX = "domain-name";//ドメイン名
-
-const SIGNIN_URL = "http://localhost:5173";
-const SIGNOUT_URL = "http://localhost:5173";
+const COGNITO_REGION = import.meta.env.VITE_COGNITO_REGION;
+const COGNITO_USER_POOL_ID = import.meta.env.VITE_COGNITO_USER_POOL_ID;
+const COGNITO_USER_POOL_CLIENT = import.meta.env.VITE_COGNITO_CLIENT_ID;
+const COGNITO_DOMAIN_PREFIX = import.meta.env.VITE_COGNITO_DOMAIN;
+const SIGNIN_URL = import.meta.env.VITE_SIGNIN_URL;
+const SIGNOUT_URL = import.meta.env.VITE_SIGNOUT_URL;
 
 export const config: ResourcesConfig = {
     Auth: {
         Cognito: {
-            userPoolId: COGNITO_USER_POOL,
+            userPoolId: COGNITO_USER_POOL_ID,
             userPoolClientId: COGNITO_USER_POOL_CLIENT,
             loginWith: {
                 oauth: {
@@ -26,3 +24,5 @@ export const config: ResourcesConfig = {
         },
     },
 };
+
+Amplify.configure(config);
