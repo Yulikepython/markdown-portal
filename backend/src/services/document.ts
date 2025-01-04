@@ -73,6 +73,7 @@ export class DocumentServiceDynamo {
             content,
             isPublic: false,
             schemaVersion: CURRENT_SCHEMA_VERSION,
+            docMetadata: {},
         };
 
         const params = {
@@ -84,6 +85,7 @@ export class DocumentServiceDynamo {
                 content: { S: newDoc.content },
                 isPublic: { BOOL: newDoc.isPublic },
                 schemaVersion: { N: newDoc.schemaVersion.toString() },
+                docMetadata: { S: JSON.stringify(newDoc.docMetadata)},
             },
         };
 
@@ -114,6 +116,7 @@ export class DocumentServiceDynamo {
             content: item.content.S!,
             isPublic: item.isPublic.BOOL!,
             schemaVersion: Number(item.schemaVersion.N),
+            docMetadata: JSON.parse(item.docMetadata.S!),
         })) || [];
     }
 
@@ -143,6 +146,7 @@ export class DocumentServiceDynamo {
             content: result.Item.content.S!,
             isPublic: result.Item.isPublic.BOOL!,
             schemaVersion: Number(result.Item.schemaVersion.N),
+            docMetadata: JSON.parse(result.Item.docMetadata.S!),
     };
     }
 
@@ -174,6 +178,7 @@ export class DocumentServiceDynamo {
                 content: item.content.S!,
                 isPublic: item.isPublic.BOOL!,
                 schemaVersion: Number(item.schemaVersion.N),
+                docMetadata: JSON.parse(item.docMetadata.S!),
             };
         }
         return null;
@@ -222,6 +227,7 @@ export class DocumentServiceDynamo {
                     content: result.Attributes.content.S!,
                     isPublic: result.Attributes.isPublic.BOOL!,
                     schemaVersion: Number(result.Attributes.schemaVersion.N),
+                    docMetadata: JSON.parse(result.Attributes.docMetadata.S!),
                 };
             }
             return null;

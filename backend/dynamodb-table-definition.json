@@ -9,6 +9,10 @@
     {
       "AttributeName": "slug",
       "AttributeType": "S"
+    },
+    {
+      "AttributeName": "id",
+      "AttributeType": "N"
     }
   ],
   "KeySchema": [

@@ -49,6 +49,7 @@ async function putIfNotExists(doc: Document) {
                 content: { S: doc.content },
                 isPublic: { BOOL: doc.isPublic },
                 schemaVersion: { N: doc.schemaVersion.toString() },
+                docMetadata: { S: JSON.stringify(doc.docMetadata ?? {})},
             },
             // すでに userId+slug が存在する場合は上書きしない
             ConditionExpression: "attribute_not_exists(userId) AND attribute_not_exists(slug)",
