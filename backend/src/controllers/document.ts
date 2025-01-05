@@ -58,14 +58,14 @@ export class DocumentController {
             //     return res.status(403).json({ message: "Authentication required" });
             // }
 
-            const { content } = req.body;
+            const { content, isPublic } = req.body;
 
             // バリデーション
             if (!content) {
                 return res.status(400).json({ message: "Content are required" });
             }
 
-            const newDoc = await DocumentServiceDynamo.createDocument(content, req.user.id);
+            const newDoc = await DocumentServiceDynamo.createDocument(content, req.user.id, isPublic);
             res.status(201).json(newDoc);
         } catch (error) {
             console.error('Error in createDocument:', error);

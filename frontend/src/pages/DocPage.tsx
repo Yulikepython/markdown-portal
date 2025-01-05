@@ -47,7 +47,7 @@ const DocPage: React.FC = () => {
             if (slug) {
                 await api.updateDocument(slug, content, isPublic);
             } else {
-                await api.createDocument(content);
+                await api.createDocument(content, isPublic);
             }
             navigate("/");
         } catch (err) { //eslint-disable-line

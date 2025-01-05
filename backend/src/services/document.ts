@@ -93,9 +93,11 @@ export class DocumentServiceDynamo {
      * 新規ドキュメントの作成
      * @param content ドキュメントの内容
      * @param userId ユーザーID
+     * @param isPublic 公開フラグ
      * @returns 作成されたドキュメント
      */
-    static async createDocument(content: string, userId: string): Promise<Document> {
+    static async createDocument(content: string, userId: string, isPublic: boolean): Promise<Document> {
+        console.log('createDocument', content, userId, isPublic);
         const slug = uuidv4();
         const nextId = await DocumentServiceDynamo.getNextAutoIncrementId();
         const newDoc: Document = {
@@ -103,7 +105,7 @@ export class DocumentServiceDynamo {
             userId,
             slug,
             content,
-            isPublic: false,
+            isPublic: isPublic,
             schemaVersion: CURRENT_SCHEMA_VERSION,
             docMetadata: {},
         };
