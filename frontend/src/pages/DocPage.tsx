@@ -59,7 +59,7 @@ const DocPage: React.FC = () => {
     // 削除
     const handleDelete = async () => {
         if (!slug) return;
-        if (!window.confirm("本当に削除しますか？")) return;
+        if (!window.confirm("本当に削除しますか？削除は取り消せません。")) return;
         try {
             await api.deleteDocument(slug);
             navigate("/");
