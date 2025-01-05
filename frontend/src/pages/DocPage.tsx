@@ -63,6 +63,19 @@ const DocPage: React.FC = () => {
         );
     }
 
+    // onClick ハンドラ例
+    const handleDelete = async () => {
+        if (!slug) return;
+        if (!window.confirm("本当に削除しますか？")) return;
+        try {
+            await api.deleteDocument(slug);
+            navigate("/");
+        } catch (err) {
+            console.error(err);
+            setError("削除に失敗しました");
+        }
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.breadcrumb}>
@@ -72,15 +85,46 @@ const DocPage: React.FC = () => {
                 <>
                     <div className={styles.editor}>
                         <MdEditor
-                            style={{ height: "80vh" }}
+                            style={{height: "70vh"}}
                             value={content}
-                            onChange={({ text }) => setContent(text)}
+                            onChange={({text}) => setContent(text)}
                             renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
+                            // 例: ツールバーの設定を追加
+                            config={{
+                                view: {
+                                    // エディタ上部のメニューを表示
+                                    menu: true,
+                                    // Markdownソース表示エリアを表示
+                                    md: true,
+                                    // HTMLプレビュー表示エリアを表示 (false にすれば隠せる)
+                                    html: true,
+                                },
+                                canView: {
+                                    // 全画面表示ボタン
+                                    fullScreen: true,
+                                    // メニューを隠すボタン
+                                    hideMenu: false,
+                                },
+                            }}
                         />
                     </div>
                     <div className={styles.checkbox}>
-                        <input type="checkbox" id="public" name="public" checked={isPublic} onChange={handleCheck}/>
-                        <label htmlFor="public">公開する</label>
+                        <label htmlFor="public" style={{display: "block", marginBottom: "4px"}}>
+                            <input
+                                type="checkbox"
+                                id="public"
+                                name="public"
+                                checked={isPublic}
+                                onChange={handleCheck}
+                                style={{marginRight: "6px"}}
+                            />
+                            公開する
+                        </label>
+
+                        {/* 補足説明を追加 */}
+                        <small style={{color: "#555"}}>
+                            チェックを入れると、誰でも閲覧できる公開URLが発行されます。
+                        </small>
                     </div>
                     <div className={styles.buttonGroup}>
                         <button className={styles.saveButton} onClick={handleSave}>
@@ -93,9 +137,44 @@ const DocPage: React.FC = () => {
                             Back to Top
                         </button>
                     </div>
+                    {isEditable && slug && (
+                        <button
+                            style={{ backgroundColor: "red", color: "white", marginLeft: "8px" }}
+                            onClick={handleDelete}
+                        >
+                            削除
+                        </button>
+                    )}
+                    {isPublic && slug && ( // 公開設定が true かつ slug が存在する場合
+                        <div style={{ margin: "16px 0" }}>
+                            <span style={{ marginRight: "12px" }}>
+                              公開URL: {`${window.location.origin}/documents/${slug}`}
+                            </span>
+                            <button
+                                onClick={() => {
+                                    // クリップボードにコピー
+                                    navigator.clipboard.writeText(
+                                        `${window.location.origin}/documents/${slug}`
+                                    );
+                                    alert("公開URLをコピーしました！");
+                                }}
+                            >
+                                共有
+                            </button>
+                            {/* 公開URLを新しいタブで確認できるリンク */}
+                            <a
+                                href={`${window.location.origin}/documents/${slug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ marginLeft: "12px" }}
+                            >
+                                公開ページを開く
+                            </a>
+                        </div>
+                    )}
                 </>
             ) : (
-                <p>You do not have permission to edit this document.</p>
+                <p>編集権限はありません。</p>
             )}
         </div>
     );

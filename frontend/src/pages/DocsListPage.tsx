@@ -56,6 +56,20 @@ const DocsListPage: React.FC = () => {
         <div>
             {isSignedIn ? (
                 <>
+                    <div style={{margin: "16px 0"}}>
+                        <Link
+                            to="/docs/new"
+                            style={{
+                                backgroundColor: "#007bff",
+                                color: "white",
+                                padding: "8px 12px",
+                                borderRadius: "4px",
+                                textDecoration: "none",
+                            }}
+                        >
+                            + 新規ドキュメント
+                        </Link>
+                    </div>
                     <h1>あなたのドキュメント一覧</h1>
                     <ul>
                         {documents.map((doc) => (
