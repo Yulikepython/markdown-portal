@@ -109,6 +109,18 @@ resources:
             Projection:
               ProjectionType: ALL
 
+    DocCounterTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: DocCounter
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+
     # Cognito User Pool Authorizer の Resource
     ApiGatewayAuthorizer:
       Type: AWS::ApiGateway::Authorizer

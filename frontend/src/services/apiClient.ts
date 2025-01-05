@@ -43,9 +43,9 @@ export const useApiClient = () => {
                     throw error;
                 }
             },
-            createDocument: async (content: string): Promise<any> => { //eslint-disable-line
+            createDocument: async (content: string, isPublic: boolean): Promise<any> => { //eslint-disable-line
                 try {
-                    const response = await apiClient.post("/docs", { content });
+                    const response = await apiClient.post("/docs", { content, isPublic });
                     return response.data;
                 } catch (error) {
                     console.error("Error creating document:", error);

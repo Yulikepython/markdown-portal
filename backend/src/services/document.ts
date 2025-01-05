@@ -32,38 +32,72 @@ export class DocumentServiceDynamo {
     static readonly COUNTER_TABLE_NAME = "DocCounter";
 
     static async getNextAutoIncrementId(): Promise<number> {
-        // 1つのレコード "pk = docCounter" に対して counterValue を原子的に +1 する
-        const params = {
-            TableName: DocumentServiceDynamo.COUNTER_TABLE_NAME,
-            Key: {
-                pk: { S: "docCounter" },
-            },
-            UpdateExpression: "ADD counterValue :inc",
-            ExpressionAttributeValues: {
-                ":inc": { N: "1" }, // +1
-            },
-            ReturnValue: ReturnValue.UPDATED_NEW, // 変更後の値を返す
-        };
+        const tableName = DocumentServiceDynamo.COUNTER_TABLE_NAME; // "DocCounter"
+        const pkValue = "docCounter";
 
-        const command = new UpdateItemCommand(params);
-        const result: UpdateItemCommandOutput = await dynamoClient.send(command);
-        const updatedAttr = result.Attributes;
-
-        if (!updatedAttr?.counterValue?.N) {
-            // 何らかの理由で取得失敗 or テーブルが整備されていない
-            throw new Error("Failed to increment docCounter in DocCounter table.");
+        // 1) まず一度だけ putItem してみる (attribute_not_exists(pk) により既にあったらスキップ)
+        //    → 何もなければ初期値 0 のレコードを作る
+        try {
+            await dynamoClient.send(
+                new PutItemCommand({
+                    TableName: tableName,
+                    Item: {
+                        pk: { S: pkValue },
+                        counterValue: { N: "0" },
+                    },
+                    ConditionExpression: "attribute_not_exists(pk)",
+                })
+            );
+            console.log("[getNextAutoIncrementId] Initialized docCounter=0");
+        } catch (err: any) {
+            if (err.name === "ConditionalCheckFailedException") {
+                // すでに存在するならOK (スルー)
+            } else {
+                console.error(
+                    "[getNextAutoIncrementId] PutItem (init docCounter) failed:",
+                    err
+                );
+                // このエラーは致命的でないなら黙ってスルーでも可
+            }
         }
 
-        // counterValue が "123" のような文字列で返るので number に変換
-        return parseInt(updatedAttr.counterValue.N, 10);
+        // 2) ADD で +1
+        try {
+            const updateParams = {
+                TableName: tableName,
+                Key: { pk: { S: pkValue } },
+                UpdateExpression: "ADD counterValue :inc",
+                ExpressionAttributeValues: {
+                    ":inc": { N: "1" },
+                },
+                ReturnValues: ReturnValue.UPDATED_NEW,
+            };
+
+            const command = new UpdateItemCommand(updateParams);
+            const result: UpdateItemCommandOutput = await dynamoClient.send(command);
+
+            const updatedAttr = result.Attributes;
+            const newValue = updatedAttr?.counterValue?.N;
+
+            if (!newValue) {
+                throw new Error("Failed to increment docCounter in DocCounter table.");
+            }
+            return parseInt(newValue, 10);
+        } catch (err) {
+            console.error("[getNextAutoIncrementId] Error incrementing docCounter:", err);
+            throw err;
+        }
     }
+
     /**
      * 新規ドキュメントの作成
      * @param content ドキュメントの内容
      * @param userId ユーザーID
+     * @param isPublic 公開フラグ
      * @returns 作成されたドキュメント
      */
-    static async createDocument(content: string, userId: string): Promise<Document> {
+    static async createDocument(content: string, userId: string, isPublic: boolean): Promise<Document> {
+        console.log('createDocument', content, userId, isPublic);
         const slug = uuidv4();
         const nextId = await DocumentServiceDynamo.getNextAutoIncrementId();
         const newDoc: Document = {
@@ -71,7 +105,7 @@ export class DocumentServiceDynamo {
             userId,
             slug,
             content,
-            isPublic: false,
+            isPublic: isPublic,
             schemaVersion: CURRENT_SCHEMA_VERSION,
             docMetadata: {},
         };

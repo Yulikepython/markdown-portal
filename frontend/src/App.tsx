@@ -1,3 +1,4 @@
+// App.tsx (抜粋)
 import React from "react";
 import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import DocsListPage from "./pages/DocsListPage";
@@ -5,6 +6,7 @@ import DocPage from "./pages/DocPage";
 import PublicDocumentPage from "./pages/PublicDocumentPage";
 
 import { CombinedAuthProvider, useAuthContext } from "./context/AuthContext.bridge";
+import "./App.css"; // 必要に応じて、追加CSSをApp.cssなどに追記
 
 const App: React.FC = () => {
     return (
@@ -19,18 +21,31 @@ const MainRouter: React.FC = () => {
 
     return (
         <Router>
-            <div className="navbar">
-                <Link to="/" className="logo">Markdown Portal</Link>
-                {isSignedIn ? (
-                    <div className="auth-info">
-                        <span>{`Logged in as: ${userEmail || "unknown"}`}</span>
-                        <button onClick={logout}>Logout</button>
-                    </div>
-                ) : (
-                    <button onClick={login}>Login</button>
-                )}
-            </div>
+            {/* ナビゲーションバー */}
+            <header className="navbar-custom">
+                <div className="navbar-left">
+                    <Link to="/" className="nav-logo">
+                        Markdown Portal
+                    </Link>
+                </div>
+                <div className="navbar-right">
+                    {isSignedIn ? (
+                        <>
+                            {/* メールアドレスを右寄せ表示 */}
+                            <span className="user-email">{userEmail || "unknown"}</span>
+                            <button className="logout-btn" onClick={logout}>
+                                Logout
+                            </button>
+                        </>
+                    ) : (
+                        <button className="login-btn" onClick={login}>
+                            Login
+                        </button>
+                    )}
+                </div>
+            </header>
 
+            {/* ルーティング */}
             <Routes>
                 <Route path="/" element={<DocsListPage />} />
                 <Route path="/docs/:slug" element={<DocPage />} />

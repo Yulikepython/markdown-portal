@@ -1,17 +1,21 @@
+// DocsListPage.tsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import {useApiClient} from "../services/apiClient";
+import { useApiClient } from "../services/apiClient";
 import { useAuthContext } from "../context/AuthContext.bridge";
-import {AxiosError} from "axios";
+import { AxiosError } from "axios";
+
+import styles from "../styles/DocsListPage.module.scss";
+
 
 const extractTitle = (markdown: string): string => {
     const lines = markdown.split("\n");
     for (const line of lines) {
-        if (/^#\s/.test(line)) { // H1（# のみ）の行をチェック
-            return line.replace(/^#\s*/, "").trim(); // H1部分を取り出す
+        if (/^#\s/.test(line)) {
+            return line.replace(/^#\s*/, "").trim();
         }
     }
-    return markdown.substring(0, 20).trim() || "Untitled"; // デフォルトタイトル
+    return markdown.substring(0, 20).trim() || "Untitled";
 };
 
 const DocsListPage: React.FC = () => {
@@ -45,30 +49,100 @@ const DocsListPage: React.FC = () => {
                 }
             }
         };
-        fetchDocs().then();
+        fetchDocs();
     }, [api, user]);
 
     if (error) {
         return <div style={{ color: "red" }}>{error}</div>;
     }
 
+    // 「共有」ボタン押下時の挙動例
+    const handleShare = (slug: string) => {
+        const publicUrl = `${window.location.origin}/documents/${slug}`;
+        navigator.clipboard.writeText(publicUrl);
+        alert("公開URLをクリップボードにコピーしました!\n" + publicUrl);
+    };
+
     return (
-        <div>
+        <div style={{ width: "100%", maxWidth: "900px", margin: "10px auto", textAlign: "left" }}>
             {isSignedIn ? (
                 <>
-                    <h1>あなたのドキュメント一覧</h1>
-                    <ul>
-                        {documents.map((doc) => (
-                            <li key={doc.slug}>
-                                <Link to={`/docs/${doc.slug}`}>
-                                    <strong>{extractTitle(doc.content)}</strong>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
+                    <div style={{ margin: "16px 0", textAlign: "right" }}>
+                        <Link
+                            to="/docs/new"
+                            style={{
+                                backgroundColor: "#007bff",
+                                color: "white",
+                                padding: "8px 12px",
+                                borderRadius: "4px",
+                                textDecoration: "none",
+                            }}
+                        >
+                            + 新規ドキュメント
+                        </Link>
+                    </div>
+
+                    <h1>ドキュメント一覧</h1>
+
+                    <table className={styles.docsTable}>
+                        <thead>
+                        <tr style={{ backgroundColor: "#f0f0f0", borderBottom: "2px solid #ccc" }}>
+                            <th style={{ padding: "8px", textAlign: "left" }}>タイトル</th>
+                            <th style={{ padding: "8px", textAlign: "left", width: "150px" }}>
+                                公開ステータス
+                            </th>
+                            <th style={{ padding: "8px", textAlign: "left", width: "120px" }}>
+                                操作
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {documents.map((doc) => {
+                            const title = extractTitle(doc.content);
+                            const isPublic = doc.isPublic;
+                            return (
+                                <tr
+                                    key={doc.slug}
+                                    style={{ borderBottom: "1px solid #ddd" }}
+                                >
+                                    {/* タイトル */}
+                                    <td style={{ padding: "8px" }}>
+                                        <Link
+                                            to={`/docs/${doc.slug}`}
+                                            style={{ color: "#007bff", textDecoration: "none" }}
+                                        >
+                                            <strong>{title}</strong>
+                                        </Link>
+                                    </td>
+
+                                    {/* 公開/非公開 */}
+                                    <td style={{ padding: "8px" }}>
+                                        {isPublic ? (
+                                            <span style={{ color: "green" }}>公開</span>
+                                        ) : (
+                                            <span style={{ color: "gray" }}>非公開</span>
+                                        )}
+                                    </td>
+
+                                    {/* 共有ボタン（公開時のみ） */}
+                                    <td style={{ padding: "8px" }}>
+                                        {isPublic ? (
+                                            <button className={styles.shareButton} onClick={() => handleShare(doc.slug)}>共有</button>
+                                        ) : (
+                                            <em style={{ fontSize: "0.9rem", color: "#888" }}>
+                                                -
+                                            </em>
+                                        )}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        </tbody>
+                    </table>
                 </>
-            ) : <div>ログインしてください</div>
-            }
+            ) : (
+                <div>ログインしてください</div>
+            )}
         </div>
     );
 };

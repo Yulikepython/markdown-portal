@@ -51,21 +51,6 @@
   font-size: 16px;
 }
 
-.navbar {
-  background-color: #343a40;
-  color: white;
-  padding: 10px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 20px;
-  color: white;
-  text-decoration: none;
-}
-
 .auth-info {
   font-size: 14px;
   display: flex;
@@ -101,3 +86,126 @@ button {
   overflow: auto; /* コンテンツが長すぎた場合にスクロール可能に */
 }
 
+/* 「公開する」チェックボックスまわり */
+.publicBlock {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f8f9fa; /* 薄い背景 */
+  border: 1px solid #ddd;
+  border-radius: 4px;
+
+  label {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2); /* チェックを少し大きく */
+    cursor: pointer;
+  }
+
+  small {
+    color: #555;
+  }
+}
+
+/* アクションボタンのコンテナ */
+.actionsRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* ボタンの間隔 */
+  margin-top: 1.5rem;
+}
+
+/* Save ボタンを大きめに */
+.saveButton {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #0069d9;
+  }
+}
+
+/* Back to Top ボタンの色 */
+.topButton {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.7rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #5a6268;
+  }
+}
+
+/* 削除ボタンはやや目立たないように */
+.deleteButton {
+  background-color: #dc3545;
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: auto; /* 自動で右寄せしたい場合 */
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #c82333;
+  }
+}
+
+/* 公開URLや共有ボタンをまとめる枠 */
+.publicUrlBox {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #fafafa;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+
+  .publicUrlHeading {
+    font-weight: 600;
+    margin-right: 1rem;
+  }
+
+  .shareButton {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 1rem;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #218838;
+    }
+  }
+
+  a {
+    margin-left: 1rem;
+    color: #007bff;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

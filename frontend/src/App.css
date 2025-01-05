@@ -1,8 +1,11 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width:100%;
+  text-align: start;
 }
 
 .logo {
@@ -40,3 +43,70 @@
 .read-the-docs {
   color: #888;
 }
+
+/* -----------------------------
+   1) ナビゲーションバー全体
+   ----------------------------- */
+.navbar-custom {
+  background-color: #1f3e5a; /* 好みの色に変更 (濃いブルー系など) */
+  padding:0 1rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: 100%;
+}
+
+/* 左側ロゴ部分 */
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+.nav-logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  text-decoration: none;
+}
+.nav-logo:hover {
+  opacity: 0.8;
+}
+
+/* 右側（メールアドレス＋ボタン） */
+.navbar-right {
+  display: flex;
+  align-items: center;
+}
+.user-email {
+  margin-right: 1rem;
+  font-size: 0.95rem;
+  color: #ddd;
+}
+
+/* ボタン系：見栄えアップ */
+.logout-btn, .login-btn {
+  background-color: #f44336; /* ログアウトボタンは赤系 */
+  border: none;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+  margin-left: 0.5rem;
+}
+.logout-btn:hover, .login-btn:hover {
+  background-color: #d32f2f;
+}
+
+/* -----------------------------
+   2) 他の要素がナビゲーションバーに隠れないための余白
+   ----------------------------- */
+body {
+  margin: 0;
+  padding: 0;
+  width:100%;
+}
+
