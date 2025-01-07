@@ -178,6 +178,33 @@
 
 ---
 
+.envファイルについて（frontend）
+VITE_API_STAGE
+
+local → ローカル開発モード (http://localhost:3000/local/api などに向く)
+dev → 開発ステージ (https://{devのAPI Gateway}/dev/api など)
+prod → 本番 (https://{本番API Gateway}/prod/api など)
+REACT_APP_USE_MOCK_AUTH
+
+true の場合、フロントエンドでオフライン用のモック認証が動く。ローカルで簡易ログイン状態をエミュレートするためのもの。
+VITE_COGNITO_DOMAIN
+
+Cognito のドメイン (例: myapp.auth.ap-northeast-1.amazoncognito.com の myapp 部分) を指定することが多い。
+Amplify設定では domain: "${domainPrefix}.auth.${region}.amazoncognito.com" となるため、その domainPrefix が VITE_COGNITO_DOMAIN。
+VITE_COGNITO_CLIENT_ID / VITO_COGNITO_USER_POOL_ID
+
+Cognito ユーザープールの「クライアントID」や「ユーザープールID」。
+例: VITE_COGNITO_CLIENT_ID=abcd1234efgh5678ijkl
+例: VITO_COGNITO_USER_POOL_ID=ap-northeast-1_xxxxxxxx
+VITE_COGNITO_REGION
+
+Cognito を作成した AWS リージョン (例: ap-northeast-1)
+VITE_SIGNIN_URL と VITE_SIGNOUT_URL
+
+Cognito 認証成功後 / ログアウト後に戻ってくる URL。Amplify の OAuth 設定で redirectSignIn / redirectSignOut に指定されます。
+例: ローカル開発なら http://localhost:5173/
+本番なら https://example.com/
+
 ## 5. 今後の課題・TODO
 
 1. **フロントエンドのデザイン**
