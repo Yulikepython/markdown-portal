@@ -2,7 +2,8 @@
 import { DocumentController } from '../../src/controllers/document';
 import { DocumentServiceDynamo } from '../../src/services/document';
 import { Request, Response, NextFunction } from 'express';
-import { authenticateUser } from "../../src/middlewares/auth";
+import { authenticateUser } from '../../src/middlewares/authIndex';
+import { sampleUseId } from "../../src/middlewares/authLocal";
 
 jest.mock('../../src/services/document');
 
@@ -15,43 +16,46 @@ describe('DocumentController', () => {
     beforeAll(() => {
         process.env.DYNAMO_TABLE_NAME = 'TestDocumentsTable';
         process.env.IS_OFFLINE = 'true';
-        process.env.LOCAL_DYNAMO_ENDPOINT = 'http://localhost:8000';
+        process.env.DYNAMO_ENDPOINT = 'http://localhost:8888';
     });
 
     beforeEach(() => {
         jest.clearAllMocks();
         jsonMock = jest.fn();
-
         mockNext = jest.fn();
 
+        // レスポンスモック: 上位 describe でも end を追加しておく
         mockRes = {
             status: jest.fn().mockReturnThis(),
-            json: jest.fn(),
-            end: jest.fn(),  // ← これを追加
+            json: jsonMock,
+            end: jest.fn(),
         };
+        // リクエストヘッダーに x-user-id を付与
         mockReq = {
-            headers: { 'x-user-id': 'test-user-id' }
+            headers: { 'x-user-id': sampleUseId }
         };
 
+        // 認証ミドルウェアを先に通す
         authenticateUser(mockReq as Request, mockRes as Response, mockNext);
-        mockNext = jest.fn();
-        jest.clearAllMocks();
+        // ここで mockNext() が呼ばれるはず
     });
 
     it('should return documents in JSON', async () => {
+        // モック: 返却値
         (DocumentServiceDynamo.getDocumentsByOwnUser as jest.Mock).mockResolvedValue([
-            { userId: 'test-user-id', slug: 'abc', content: 'hello', isPublic: false }
+            { userId: sampleUseId, slug: 'abc', content: 'hello', isPublic: false }
         ]);
-        authenticateUser(mockReq as Request, mockRes as Response, mockNext);
 
+        // 実行
         await DocumentController.getDocumentsOfLoggedInUser(
             mockReq as Request,
             mockRes as Response
         );
 
-        expect(DocumentServiceDynamo.getDocumentsByOwnUser).toHaveBeenCalledWith('test-user-id');
+        // 検証
+        expect(DocumentServiceDynamo.getDocumentsByOwnUser).toHaveBeenCalledWith(sampleUseId);
         expect(jsonMock).toHaveBeenCalledWith([
-            { userId: 'test-user-id', slug: 'abc', content: 'hello', isPublic: false }
+            { userId: sampleUseId, slug: 'abc', content: 'hello', isPublic: false }
         ]);
     });
 
@@ -63,7 +67,6 @@ describe('DocumentController', () => {
 
         beforeAll(() => {
             process.env.DYNAMO_TABLE_NAME = 'TestDocumentsTable';
-            process.env.IS_OFFLINE = 'true';
             process.env.LOCAL_DYNAMO_ENDPOINT = 'http://localhost:8000';
         });
 
@@ -72,24 +75,23 @@ describe('DocumentController', () => {
             jsonMock = jest.fn();
             statusMock = jest.fn().mockReturnThis();
 
+            // 下位 describe でもレスポンスに end を付与
             mockRes = {
                 status: statusMock,
                 json: jsonMock,
+                end: jest.fn()
             };
-            // リクエストに user を持たせる
             mockReq = {
-                headers: { 'x-user-id': 'test-user-id' },
+                headers: { 'x-user-id': sampleUseId },
                 params: {},
                 body: {},
             };
 
-            // ミドルウェアで user を設定
+            // ミドルウェアを通す
             authenticateUser(mockReq as Request, mockRes as Response, jest.fn());
         });
 
-        //
         // 1) getDocumentsOfLoggedInUser は既にあるので省略
-        //
 
         //
         // 2) getDocumentBySlugOfLoggedInUser
@@ -97,8 +99,9 @@ describe('DocumentController', () => {
         describe('getDocumentBySlugOfLoggedInUser', () => {
             it('should return a document with given slug for the logged in user', async () => {
                 mockReq!.params = { slug: 'docSlug' };
+
                 (DocumentServiceDynamo.getDocumentBySlugAndUserId as jest.Mock).mockResolvedValue({
-                    userId: 'test-user-id',
+                    userId: sampleUseId,
                     slug: 'docSlug',
                     content: 'example content',
                     isPublic: false,
@@ -109,9 +112,10 @@ describe('DocumentController', () => {
                     mockRes as Response
                 );
 
-                expect(DocumentServiceDynamo.getDocumentBySlugAndUserId).toHaveBeenCalledWith('docSlug', 'test-user-id');
+                expect(DocumentServiceDynamo.getDocumentBySlugAndUserId)
+                    .toHaveBeenCalledWith('docSlug', sampleUseId);
                 expect(jsonMock).toHaveBeenCalledWith({
-                    userId: 'test-user-id',
+                    userId: sampleUseId,
                     slug: 'docSlug',
                     content: 'example content',
                     isPublic: false,
@@ -120,7 +124,8 @@ describe('DocumentController', () => {
 
             it('should return 500 if an error occurs', async () => {
                 mockReq!.params = { slug: 'docSlug' };
-                (DocumentServiceDynamo.getDocumentBySlugAndUserId as jest.Mock).mockRejectedValue(new Error('Test Error'));
+                (DocumentServiceDynamo.getDocumentBySlugAndUserId as jest.Mock)
+                    .mockRejectedValue(new Error('Test Error'));
 
                 await DocumentController.getDocumentBySlugOfLoggedInUser(
                     mockReq as Request,
@@ -150,7 +155,8 @@ describe('DocumentController', () => {
                     mockRes as Response
                 );
 
-                expect(DocumentServiceDynamo.getPublicDocumentBySlug).toHaveBeenCalledWith('public-slug');
+                expect(DocumentServiceDynamo.getPublicDocumentBySlug)
+                    .toHaveBeenCalledWith('public-slug');
                 expect(jsonMock).toHaveBeenCalledWith({
                     userId: 'public-user',
                     slug: 'public-slug',
@@ -161,7 +167,8 @@ describe('DocumentController', () => {
 
             it('should return 500 on error', async () => {
                 mockReq!.params = { slug: 'public-slug' };
-                (DocumentServiceDynamo.getPublicDocumentBySlug as jest.Mock).mockRejectedValue(new Error('Boom!'));
+                (DocumentServiceDynamo.getPublicDocumentBySlug as jest.Mock)
+                    .mockRejectedValue(new Error('Boom!'));
 
                 await DocumentController.getDocumentBySlugOfPublic(
                     mockReq as Request,
@@ -181,7 +188,7 @@ describe('DocumentController', () => {
                 mockReq!.body = { content: 'new doc content' };
 
                 (DocumentServiceDynamo.createDocument as jest.Mock).mockResolvedValue({
-                    userId: 'test-user-id',
+                    userId: sampleUseId,
                     slug: 'abc-123',
                     content: 'new doc content',
                     isPublic: false,
@@ -189,10 +196,12 @@ describe('DocumentController', () => {
 
                 await DocumentController.createDocument(mockReq as Request, mockRes as Response);
 
-                expect(DocumentServiceDynamo.createDocument).toHaveBeenCalledWith('new doc content', 'test-user-id');
+                // コード側では 3 引数呼び出し( content, userId, isPublic ) になるため
+                expect(DocumentServiceDynamo.createDocument)
+                    .toHaveBeenCalledWith('new doc content', sampleUseId, undefined);
                 expect(statusMock).toHaveBeenCalledWith(201);
                 expect(jsonMock).toHaveBeenCalledWith({
-                    userId: 'test-user-id',
+                    userId: sampleUseId,
                     slug: 'abc-123',
                     content: 'new doc content',
                     isPublic: false,
@@ -210,7 +219,8 @@ describe('DocumentController', () => {
 
             it('should return 500 if service throws error', async () => {
                 mockReq!.body = { content: 'new doc content' };
-                (DocumentServiceDynamo.createDocument as jest.Mock).mockRejectedValue(new Error('DB Error'));
+                (DocumentServiceDynamo.createDocument as jest.Mock)
+                    .mockRejectedValue(new Error('DB Error'));
 
                 await DocumentController.createDocument(mockReq as Request, mockRes as Response);
 
@@ -228,7 +238,7 @@ describe('DocumentController', () => {
                 mockReq!.body = { content: 'updated content', isPublic: true };
 
                 (DocumentServiceDynamo.updateDocument as jest.Mock).mockResolvedValue({
-                    userId: 'test-user-id',
+                    userId: sampleUseId,
                     slug: 'doc-slug',
                     content: 'updated content',
                     isPublic: true,
@@ -239,11 +249,11 @@ describe('DocumentController', () => {
                 expect(DocumentServiceDynamo.updateDocument).toHaveBeenCalledWith(
                     'doc-slug',
                     'updated content',
-                    'test-user-id',
+                    sampleUseId,
                     true
                 );
                 expect(jsonMock).toHaveBeenCalledWith({
-                    userId: 'test-user-id',
+                    userId: sampleUseId,
                     slug: 'doc-slug',
                     content: 'updated content',
                     isPublic: true,
@@ -296,9 +306,10 @@ describe('DocumentController', () => {
 
                 await DocumentController.deleteDocument(mockReq as Request, mockRes as Response);
 
-                expect(DocumentServiceDynamo.deleteDocument).toHaveBeenCalledWith('doc-slug', 'test-user-id');
+                expect(DocumentServiceDynamo.deleteDocument).toHaveBeenCalledWith('doc-slug', sampleUseId);
                 expect(statusMock).toHaveBeenCalledWith(204);
-                expect(jsonMock).not.toHaveBeenCalled(); // 204 の場合 body なし
+                // 204 の場合 bodyなし → json を呼ばない
+                expect(jsonMock).not.toHaveBeenCalled();
             });
 
             it('should return 404 if document not found', async () => {
@@ -308,6 +319,7 @@ describe('DocumentController', () => {
 
                 await DocumentController.deleteDocument(mockReq as Request, mockRes as Response);
 
+                expect(DocumentServiceDynamo.deleteDocument).toHaveBeenCalledWith('doc-slug', sampleUseId);
                 expect(statusMock).toHaveBeenCalledWith(404);
                 expect(jsonMock).toHaveBeenCalledWith({ message: 'Document not found' });
             });

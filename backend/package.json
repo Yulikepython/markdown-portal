@@ -8,7 +8,7 @@
     "dev": "npm run build && npm run create-local-tables && IS_OFFLINE=true serverless offline --stage local",
     "deploy:dev": "serverless deploy --stage dev",
     "deploy:prod": "serverless deploy --stage prod",
-    "test": "jest --coverage"
+    "test": "IS_OFFLINE=true jest --coverage"
   },
   "keywords": [],
   "author": "",
