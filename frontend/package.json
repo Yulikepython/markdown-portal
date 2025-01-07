@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev:offline": "vite --mode offline",
-    "dev:dev": "vite --mode develop",
-    "dev:prod": "vite --mode production",
-    "build": "tsc -b && vite build",
+    "dev": "vite --mode offline",
+    "build:offline": "tsc -b && vite build --mode offline",
+    "build:dev": "tsc -b && vite build --mode develop",
+    "build:prod": "tsc -b && vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview"
   },
