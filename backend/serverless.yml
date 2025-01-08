@@ -1,0 +1,134 @@
+service: markdown-portal-backend
+org: itcmedia
+
+useDotenv: true
+
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-northeast-1
+
+  # --stage オプションが指定されなければ "dev" にする
+  stage: ${opt:stage, 'dev'}
+
+  environment:
+    # ブランチ(ステージ)ごとにテーブル名を変える
+    DYNAMO_TABLE_NAME: "DocumentsTable-${self:provider.stage}"
+    # ローカルで serverless offline を起動するときは、手動で IS_OFFLINE=true をセット
+    IS_OFFLINE: ${env:IS_OFFLINE, 'false'}
+    DYNAMO_ENDPOINT: ${env:DYNAMO_ENDPOINT, 'http://localhost:8888'}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, 'local-offline-upid'}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, 'local-offline-cid'}
+    AWS_REGION: ${env:AWS_REGION, 'ap-northeast-1'}
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:BatchGetItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:Scan"
+        - "dynamodb:Query"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}/index/*"
+
+# (※1) custom 変数で「ローカル環境かどうか」に応じて authorizer を切り替える
+custom:
+  # stage ごとに authorizer 設定を切り替える
+  authorizerSetting:
+    local: {}        # ローカル時は認証を無効化 (null)
+    dev:
+      type: COGNITO
+      authorizerId: { Ref: ApiGatewayAuthorizer }
+    prod:
+      type: COGNITO
+      authorizerId: { Ref: ApiGatewayAuthorizer }
+  # ここでは stage に合わせて .env.dev, .env.prod などを読み込む例
+  dotenv:
+    path: .env.${self:provider.stage}
+
+functions:
+  docsHandler:
+    handler: dist/index.handler
+    events:
+      - http:
+          path: api/docs
+          method: get
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+      - http:
+          path: api/docs/{slug}
+          method: get
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+      - http:
+          path: api/docs
+          method: post
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+      - http:
+          path: api/docs/{slug}
+          method: put
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+      - http:
+          path: api/docs/{slug}
+          method: delete
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+      # 公開ドキュメントAPIはそもそも認証不要 (authorizer: なし)
+      - http:
+          path: api/documents/{slug}
+          method: get
+
+plugins:
+  - serverless-offline
+
+resources:
+  Resources:
+    DocumentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMO_TABLE_NAME}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: slug
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: slug
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: SlugIndex
+            KeySchema:
+              - AttributeName: slug
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    DocCounterTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: DocCounter
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: pk
+            AttributeType: S
+        KeySchema:
+          - AttributeName: pk
+            KeyType: HASH
+
+    # Cognito User Pool Authorizer の Resource
+    ApiGatewayAuthorizer:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: MyCognitoAuthorizer
+        Type: COGNITO
+        IdentitySource: method.request.header.Authorization
+        ProviderARNs:
+          - arn:aws:cognito-idp:ap-northeast-1:123456789012:userpool/ap-northeast-1_XXXXXXX
+        RestApiId:
+          Ref: ApiGatewayRestApi

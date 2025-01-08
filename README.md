@@ -1,235 +1,231 @@
-# Markdownドキュメント管理プラットフォーム 仕様書（Vite版）
+# markdown-portal
 
-## 1. システム概要
-
-本システムは、Markdown形式の文書（以下「MD文書」）をWeb上で管理・保存・検索・公開するアプリケーションです。  
-**Vite** を利用してフロントエンドを構築し、高速な開発体験と将来の拡張性を重視します。
+このリポジトリは、Markdown ドキュメントの作成・編集・閲覧を行うためのポータルアプリケーションです。  
+フロントエンドとバックエンドを別ディレクトリで管理しています。
 
 ---
 
-## 2. アーキテクチャ / インフラ構成
+## 1. アプリケーションの目的・概要
 
-### 2.1 全体構成
+1. **Markdown ドキュメントの作成・編集・公開**
+   - React (フロントエンド) を使用し、Markdown エディタでドキュメントを作成・編集。
+   - 仕上がったコンテンツを DynamoDB に保存し、必要に応じて公開（誰でも閲覧できる状態）に設定できます。
 
-- **フロントエンド**:
-    - Vite + React + TypeScript
-    - Markdown入力・プレビュー、認証フロー、文書管理（CRUD）を実装
-    - APIと連携して動作
+2. **ユーザー認証と権限制御**
+   - ログインしていないユーザーには編集権限を与えず、特定のユーザーのみが自分のドキュメントを編集できるようにしています。
+   - Amazon Cognito (User Pool) と JWT (ID トークン) を使った認証を導入。ローカル開発時はモック認証でスキップ可能です。
 
-- **バックエンド**:
-    - AWS Lambda + API Gateway + Node.js
-    - 認証連携 (AWS Cognito)
-    - データベース (AWS RDSまたはDynamoDB)
-
-- **認証**:
-    - AWS Cognitoを利用してメール+パスワード認証を実装
-    - 将来的にGoogle OAuth連携可能
-
-- **ホスティング / デプロイ**:
-    - フロント: Viteでビルド後、S3 + CloudFront または Amplify Hosting でホスティング
-    - バックエンド: Serverless Framework または AWS CDK でLambda + API Gatewayにデプロイ
+3. **サーバーレス構成**
+   - バックエンドは AWS Lambda + API Gateway + DynamoDB。
+   - フロントエンドは Vite + React で開発し、本番運用時は S3/CloudFront あるいは Amplify Hosting を想定。
 
 ---
 
-## 3. 機能要件
+## 2. 環境ごとの立ち上げ手順
 
-### 3.1 Markdown入力・プレビュー (ゲスト可)
-- **概要**: 認証なしでMarkdownをリアルタイムプレビュー
-- **要件**:
-    - 左ペイン：Markdown入力（`textarea`）
-    - 右ペイン：HTMLプレビュー（`react-markdown` or `@mui/markdown` など）
+### 2.1 ローカル環境（ローカル開発モード）
 
-### 3.2 Markdown文書の保存・CRUD (認証ユーザ)
-- **概要**: 認証済みユーザのみ保存可能
-- **要件**:
-    - タイトル自動抽出（最初のH1タグを利用）
-    - 文書の新規作成、編集、削除が可能
-    - 一覧表示と検索が可能
+#### 2.1.1 前提
+- Node.js (推奨: v18 以降)
+- Docker (推奨: Docker Desktop 最新)
 
-### 3.3 個別URLアクセス
-- **概要**: 各文書に固有のURLを割り当て、プレビュー可能
-- **要件**:
-    - `/docs/:id` 形式でアクセス
-    - 非公開/公開の切り替え機能は将来的に追加
-
-### 3.4 認証 (AWS Cognito)
-- **概要**: ユーザ登録、ログイン、ログアウト
-- **要件**:
-    - メール+パスワードで認証
-    - Amplify SDKを利用してトークン取得・保持
-    - バックエンドでトークン検証しアクセスを制限
-
----
-
-## 4. API仕様
-
-### エンドポイント一覧
-
-| メソッド | パス               | 概要                             | 認証 | リクエスト例 / パラメータ |
-|:--------|:-------------------|:---------------------------------|:---:|:--------------------------|
-| GET     | /api/health        | ヘルスチェック                   |  -  | -                        |
-| GET     | /api/docs          | 文書一覧 + 検索                  |  ○  | `?keyword=xxx`           |
-| POST    | /api/docs          | 新規文書作成                     |  ○  | `{ "content":"### Title..." }` |
-| GET     | /api/docs/:id      | 文書取得                         |  ○  | URLパラメータ `:id`       |
-| PUT     | /api/docs/:id      | 文書更新                         |  ○  | `{ "content":"..." }`     |
-| DELETE  | /api/docs/:id      | 文書削除                         |  ○  | URLパラメータ `:id`       |
-
----
-
-## 5. データベース設計
-
-### テーブル設計 (例: RDS)
-
-```sql
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    cognito_sub VARCHAR(255) UNIQUE NOT NULL, -- CognitoのサブID
-    email VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE documents (
-    id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(id),
-    title VARCHAR(255) NOT NULL,
-    content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-```
-
----
-
-## 6. ファイルツリー構成
-
-```
-markdown-portal/
-├── backend/
-│   ├── package.json
-│   ├── serverless.yml
-│   └── src/
-│       ├── index.ts
-│       ├── handlers/
-│       │   └── docsHandler.ts
-│       └── lib/
-│           └── db.ts
-├── frontend/
-│   ├── package.json
-│   ├── vite.config.ts
-│   ├── tsconfig.json
-│   └── src/
-│       ├── App.tsx
-│       ├── components/
-│       │   └── MarkdownEditor.tsx
-│       ├── pages/
-│       │   ├── HomePage.tsx
-│       │   ├── DocsListPage.tsx
-│       │   └── DocsDetailPage.tsx
-│       ├── services/
-│       │   └── apiClient.ts
-│       └── styles/
-│           └── App.css
-└── README.md
-```
-
----
-
-## 7. 開発手順（Viteを利用）
-
-### 7.1 フロントエンドセットアップ
-
-1. **ViteでReactプロジェクトを作成**
+#### 2.1.2 フロントエンドの起動 (モック認証)
+1. **依存パッケージのインストール**
    ```bash
-   npm create vite@latest frontend -- --template react-ts
-   cd frontend
+   cd markdown-portal/frontend
    npm install
    ```
-
-2. **必要なライブラリを追加**
+2. **ローカルサーバーの起動**
    ```bash
-   npm install react-router-dom axios @types/react-router-dom react-markdown
+   npm run dev:offline
    ```
+   - `VITE_API_STAGE=local` が指定され、モック認証が有効になります。
+   - ブラウザで `http://localhost:5173` (ポート番号は環境による) にアクセスするとアプリが確認できます。
 
-3. **開発サーバ起動**
+#### 2.1.3 バックエンドの起動 (Serverless Offline + DynamoDB Local)
+1. **DynamoDB Local を起動**
    ```bash
-   npm run dev
+   docker run -p 8888:8000 amazon/dynamodb-local
    ```
-
-4. **初期構成の確認**
-    - `App.tsx` にMarkdown入力+プレビュー機能を実装
-    - `src/pages` に各画面のルーティング設計を配置
-
----
-
-### 7.2 バックエンドセットアップ
-
-1. **Serverless Frameworkでプロジェクト作成**
+   > または、AWS公式の jar ファイルをダウンロードして `java -jar DynamoDBLocal.jar -sharedDb -port 8888` でも OK  
+   > `http://localhost:8888` でローカル DynamoDB が起動します。
+2. **依存パッケージのインストール**
    ```bash
-   mkdir backend
-   cd backend
-   npm init -y
-   npm install serverless serverless-http express
+   cd markdown-portal/backend
+   npm install
    ```
-
-2. **`serverless.yml` 設定**
-    - Lambdaエンドポイントを `/api/docs` 系に設定
-    - Cognito Authorizerを追加
-
-3. **APIエンドポイント実装**
-    - `src/handlers/docsHandler.ts` に各CRUD操作を実装
-    - DB接続ロジックは `src/lib/db.ts` に分離
-
-4. **ローカル開発サーバ起動**
+3. **ローカルテーブル作成＋サンプルデータ投入**
    ```bash
-   npx serverless offline
-   ```
-
----
-
-### 7.3 フロントエンドとバックエンドの連携
-
-1. **API呼び出しクライアントを作成**
-    - `src/services/apiClient.ts` にAxiosを用いたAPI呼び出しを実装
-   ```typescript
-   import axios from "axios";
-   const apiClient = axios.create({
-       baseURL: "http://localhost:3000/api",
-       headers: { "Content-Type": "application/json" }
-   });
-   export default apiClient;
-   ```
-
-2. **CRUD操作のテスト**
-    - 文書作成・取得・一覧・削除のエンドポイントが正しく動作するか確認
-
----
-
-## 8. テスト・デプロイ
-
-### テスト
-1. ローカルでの結合テストを実施
-    - フロントエンド→バックエンド→DBが一貫して動作するか
-2. APIの負荷テスト
-    - 小規模トラフィックで安定動作を確認
-
-### デプロイ
-1. **バックエンドデプロイ**
-   ```bash
-   npx serverless deploy
-   ```
-2. **フロントエンドビルド・ホスティング**
-   ```bash
-   cd frontend
    npm run build
-   aws s3 sync dist/ s3://your-s3-bucket
+   npm run create-local-tables
    ```
+   - `dist/scripts/createLocalTables.js` が実行され、テーブルが作られます。
+4. **Serverless Offline 起動**
+   ```bash
+   npm run start:offline
+   ```
+   - `serverless offline --stage local` が実行され、`http://localhost:3000/local/api/...` でバックエンド API にアクセス可能です。
+
+#### 2.1.4 動作確認コマンド例
+- ローカル DynamoDB でテーブル確認
+  ```bash
+  aws dynamodb list-tables --endpoint-url http://localhost:8888
+  ```
+- ドキュメント一覧取得 (GET)
+  ```bash
+  curl http://localhost:3000/local/api/docs
+  ```
+  > モック認証の場合は強制的に `userId = local-user-1234` として認識するようになっています。
 
 ---
 
-## 9. まとめ
+### 2.2 開発用ステージ（dev 環境）での起動
 
-- **Vite採用**によりフロントエンドのセットアップ・開発体験が向上
-- **AWS Serverless構成**で柔軟かつスケーラブルなバックエンドを構築
-- **今後の拡張性**を考慮したディレクトリ構成と開発手順を提案
+#### 2.2.1 前提
+- AWS アカウントにデプロイするための IAM 権限 (DynamoDB / Lambda / API Gateway など)
+- `serverless` CLI のインストール (グローバル推奨)
 
-Viteを利用した開発は、高速なフィードバックサイクルを提供し、チームの生産性を向上させると同時に、将来的な要件にも柔軟に対応可能な設計となっています。
+#### 2.2.2 フロントエンド (dev 用ビルド・デプロイ例)
+1. **dev 用ビルド**
+   ```bash
+   cd markdown-portal/frontend
+   npm install
+   npm run build
+   ```
+   - `.env` や `VITE_API_STAGE=dev` 等の設定を行う場合は、`--mode develop` などを使ってもよいです。
+2. **成果物を S3 へアップロード (例)**
+   ```bash
+   aws s3 sync dist s3://<your-dev-bucket> --delete
+   ```
+   > CloudFront や Amplify Hosting を使う場合は、AWS CLI ではなくそれぞれの方法でデプロイします。
+
+#### 2.2.3 バックエンド (dev デプロイ)
+1. **デプロイ設定の確認**
+   - `serverless.yml` で `stage: dev` が指定されるようにします (または `--stage dev` オプション)。
+2. **デプロイ実行**
+   ```bash
+   cd markdown-portal/backend
+   npm install
+   npx serverless deploy --stage dev
+   ```
+   - 成功すると API エンドポイントが発行されます。API Gateway の URL をフロントエンドで参照するように設定してください。
+
+---
+
+### 2.3 本番ステージ（prod 環境）でのデプロイ
+
+1. **フロントエンド**
+   ```bash
+   cd markdown-portal/frontend
+   npm run build
+   # 例えば S3 へのアップロード
+   aws s3 sync dist s3://<your-prod-bucket> --delete
+   ```
+   - CloudFront のキャッシュを無効化する場合、`aws cloudfront create-invalidation` などの手順を追加します。
+
+2. **バックエンド**
+   ```bash
+   cd markdown-portal/backend
+   npx serverless deploy --stage prod
+   ```
+   - デプロイ後、API Gateway の本番 URL が更新されます。フロントエンドから参照しているエンドポイントを間違えないよう注意してください。
+
+---
+
+## 3. テスト方法
+
+### 3.1 フロントエンドテスト
+- **ユニットテスト / コンポーネントテスト**:
+  ```bash
+  cd markdown-portal/frontend
+  npm run test
+  ```
+   - React Testing Library や Vitest / Jest を想定
+- **E2E テスト** (任意): Cypress などを導入し、テスト環境 (dev) へデプロイした上でテストを行う。
+
+### 3.2 バックエンドテスト
+- **単体テスト**: Jest などで service 層や controller のテストを実施
+  ```bash
+  cd markdown-portal/backend
+  npm run test
+  ```
+- **統合テスト**: Serverless Offline で起動し、API を実際に呼んでテスト (supertest など)
+
+---
+
+## 4. 開発上の注意点
+
+1. **Cognito 認証**
+   - オフライン時はモック認証を使い `userId = local-user-1234` 固定で動作します。
+   - 本番環境では JWT を検証し、ユーザーごとのデータにしかアクセスできないようにします。
+
+2. **DynamoDB スキーマ**
+   - パーティションキー: `userId`、ソートキー: `slug`
+   - 公開ドキュメント検索用に GSI (SlugIndex) を設定
+
+3. **Git フロー**
+   - **feature ブランチ** → ローカル DynamoDB
+   - **develop ブランチ** → dev ステージ (AWS)
+   - **main ブランチ** → prod ステージ (AWS)
+
+4. **デプロイ前に注意すること**
+   - `serverless.yml` 内の `stage` や `DYNAMO_TABLE_NAME` が正しいかどうか
+   - Cognito User Pool ID やクライアント ID などが環境変数で適切に指定されているか (Amplify 設定含む)
+
+5. **セキュリティ**
+   - 認証が必要なエンドポイントは JWT 検証 (Auth Middleware) を必ず通すこと
+   - 非公開データは `isPublic=false` の場合、所有ユーザーのみ編集可能とする
+
+---
+
+.envファイルについて（frontend）
+VITE_API_STAGE
+
+local → ローカル開発モード (http://localhost:3000/local/api などに向く)
+dev → 開発ステージ (https://{devのAPI Gateway}/dev/api など)
+prod → 本番 (https://{本番API Gateway}/prod/api など)
+REACT_APP_USE_MOCK_AUTH
+
+true の場合、フロントエンドでオフライン用のモック認証が動く。ローカルで簡易ログイン状態をエミュレートするためのもの。
+VITE_COGNITO_DOMAIN
+
+Cognito のドメイン (例: myapp.auth.ap-northeast-1.amazoncognito.com の myapp 部分) を指定することが多い。
+Amplify設定では domain: "${domainPrefix}.auth.${region}.amazoncognito.com" となるため、その domainPrefix が VITE_COGNITO_DOMAIN。
+VITE_COGNITO_CLIENT_ID / VITO_COGNITO_USER_POOL_ID
+
+Cognito ユーザープールの「クライアントID」や「ユーザープールID」。
+例: VITE_COGNITO_CLIENT_ID=abcd1234efgh5678ijkl
+例: VITO_COGNITO_USER_POOL_ID=ap-northeast-1_xxxxxxxx
+VITE_COGNITO_REGION
+
+Cognito を作成した AWS リージョン (例: ap-northeast-1)
+VITE_SIGNIN_URL と VITE_SIGNOUT_URL
+
+Cognito 認証成功後 / ログアウト後に戻ってくる URL。Amplify の OAuth 設定で redirectSignIn / redirectSignOut に指定されます。
+例: ローカル開発なら http://localhost:5173/
+本番なら https://example.com/
+
+## 5. 今後の課題・TODO
+
+1. **フロントエンドのデザイン**
+   - 現状、最低限の UI/UX。Bootstrap や Material-UI, Chakra UI など導入の検討
+2. **コラボレーション機能**
+   - 複数ユーザーで同一ドキュメントを共同編集するためのロック機能、またはリアルタイム編集検討
+3. **サーチ機能**
+   - タイトル・本文を全文検索するために、Elasticsearch / OpenSearch 連携 or DynamoDB Streams + Lambda などの構成を検討
+4. **監査ログ・バージョン管理**
+   - 過去バージョンの参照、差分の確認、ロールバックなど
+5. **CI/CD の高度化**
+   - GitHub Actions で Pull Request ごとに一時環境を自動構築する、など
+
+---
+
+## 6. まとめ
+
+- **ローカル開発**: Docker で DynamoDB Local、Serverless Offline、モック認証を用意し、素早い実装とテストが可能。
+- **本番運用**: Cognito + DynamoDB + Lambda + API Gateway + (S3/CloudFront or Amplify) でサーバーレス構成を実現。
+- **デプロイフロー**: Git ブランチ (feature → develop → main) と対になる環境 (local → dev → prod) を想定。
+
+> 何か不明点や追加機能のリクエストがあれば、Issue や Pull Request で検討していきましょう。
+
+以上が本プロジェクトの概要と環境別の立ち上げ手順です。  
