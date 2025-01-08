@@ -6,6 +6,8 @@ import DocPage from '../../pages/DocPage'
 import { useApiClient } from '../../services/apiClient'
 import { useAuthContext } from '../../context/AuthContext.bridge'
 import {LOCAL_USER_ID} from '../../context/AuthContext.mock'
+import '@testing-library/jest-dom'
+
 
 
 vi.mock('../../services/apiClient', () => ({ useApiClient: vi.fn() }))
@@ -24,11 +26,14 @@ function renderWithSlugPath(initialPath: string) {
 
 describe('DocPage', () => {
     beforeEach(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         (useAuthContext as vi.Mock).mockReturnValue({
             user: { userId: LOCAL_USER_ID },
             isSignedIn: true,
         });
-
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         (useApiClient as vi.Mock).mockReturnValue({
             getDocumentBySlug: vi.fn().mockResolvedValue({
             id: 1,

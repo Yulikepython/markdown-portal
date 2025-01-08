@@ -14,6 +14,8 @@ vi.mock('axios', () => {
 describe('useApiClient', () => {
   it('getDocuments が正しくAPI取得する例', async () => {
         const mockGet = vi.fn().mockResolvedValue({ data: [{ slug: 'abc', content: 'Hello' }] })
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-expect-error
             ;(axios.create as vi.Mock).mockReturnValue({
               interceptors: { request: { use: vi.fn() } },
           get: mockGet,
