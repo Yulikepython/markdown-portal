@@ -1,11 +1,12 @@
 // frontend/src/__tests__/pages/DocPage.test.tsx
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import DocPage from '../../pages/DocPage'
 import { useApiClient } from '../../services/apiClient'
 import { useAuthContext } from '../../context/AuthContext.bridge'
 import {LOCAL_USER_ID} from '../../context/AuthContext.mock'
+
 
 vi.mock('../../services/apiClient', () => ({ useApiClient: vi.fn() }))
 vi.mock('../../context/AuthContext.bridge', () => ({ useAuthContext: vi.fn() }))

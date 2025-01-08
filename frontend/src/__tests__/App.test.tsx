@@ -1,12 +1,14 @@
 // src/__tests__/App.test.tsx
-import React from 'react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react'
 import App from '../App'
+import '@testing-library/jest-dom'
+
 
 // 必要なエクスポートを部分モックするための設定
 vi.mock('../context/AuthContext.bridge', async (importOriginal) => {
-  const actual = await importOriginal();
+  // const actual = await importOriginal();
+    const actual = (await importOriginal()) as object;
   return { ...actual, useAuthContext: () => ({ isSignedIn: true, user: { userId: 'test-user' }, login: vi.fn(), logout: vi.fn() }) }
 })
 
