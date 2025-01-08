@@ -7,7 +7,7 @@ import { authenticateUser } from "./middlewares/authIndex";  // ←ここだけi
 import { DocumentController } from "./controllers/document";
 
 
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use(authenticateUser); // ローカル:モック or JWT検証
 

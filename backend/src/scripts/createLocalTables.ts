@@ -8,7 +8,6 @@ import { Document } from '../types/document';     // <= 追加
 import { DocumentServiceDynamo } from '../services/document'; // <= 追加
 
 const isOffline: boolean = process.env.IS_OFFLINE === 'true';
-const tableDefinitionPath = path.resolve(__dirname, '../../dynamodb-table-definition.json');
 
 // --- DocCounter 定義をハードコードで用意 ---
 const docCounterDefinition = {
@@ -18,10 +17,13 @@ const docCounterDefinition = {
     KeySchema: [{ AttributeName: "pk", KeyType: "HASH" }],
 };
 
-
-const tableDefinition = JSON.parse(fs.readFileSync(tableDefinitionPath, 'utf-8'));
-
-tableDefinition.TableName = process.env.DYNAMO_TABLE_NAME || tableDefinition.TableName;
+export function getTableDefinition(): any {
+  const tableDefinitionPath = path.resolve(__dirname, '../../dynamodb-table-definition.json');
+  const raw = fs.readFileSync(tableDefinitionPath, 'utf-8');
+  const json = JSON.parse(raw);
+  json.TableName = process.env.DYNAMO_TABLE_NAME || json.TableName;
+  return json;
+}
 
 const dynamoClient = new DynamoDBClient({
     region: process.env.AWS_REGION,
@@ -52,7 +54,7 @@ async function createTableIfNotExists(def: any) {
 }
 
 // 「重複しないように ConditionExpression を使う」例
-async function putIfNotExists(doc: Document) {
+async function putIfNotExists(doc: Document, tableDefinition: any) {
     try {
         const params = {
             TableName: tableDefinition.TableName,
@@ -101,13 +103,14 @@ async function initDocCounter() {
     }
 }
 
-async function insertDefaultDocuments() {
+async function insertDefaultDocuments(tableDefinition: any) {
     for (const doc of documents) {
-        await putIfNotExists(doc);
+        await putIfNotExists(doc, tableDefinition);
     }
 }
 
-async function main() {
+export async function main() {
+    const tableDefinition = getTableDefinition();
     // 1) DocumentsTable の作成
     await createTableIfNotExists(tableDefinition);
 
@@ -115,10 +118,16 @@ async function main() {
     await createTableIfNotExists(docCounterDefinition);
 
     // 3) DocumentsTable にサンプルデータ挿入
-    await insertDefaultDocuments();
+    await insertDefaultDocuments(tableDefinition);
 
     // 4) DocCounter を初期化 (必要なら)
     await initDocCounter();
 }
 
-main();
+// ★テストでなく実行用なら、条件分岐で呼ぶ
+if (require.main === module) {
+    main().catch(err => {
+        console.error(err);
+        process.exit(1);
+    });
+}
