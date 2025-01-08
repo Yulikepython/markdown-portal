@@ -1,77 +1,138 @@
-# .github/workflows/frontend.yml
 name: Frontend CI/CD
 
 on:
-  push:
-    branches: [ "develop", "main" ]
+  # -------------------------------------
+  # 1) pull_request → テスト
+  #    (PR 作成/更新/再オープン など)
+  # -------------------------------------
   pull_request:
-    branches: [ "develop", "main" ]
+    branches:
+      - "develop"
+      - "main"
+    types: [opened, synchronize, reopened]
+
+  # -------------------------------------
+  # 2) develop / main への push → デプロイ
+  # -------------------------------------
+  push:
+    branches:
+      - "develop"
+      - "main"
 
 jobs:
-  build-and-deploy:
+  # ============================
+  # (A) PR 時のテスト
+  # ============================
+  testOnPR:
+    name: Test on Pull Request
     runs-on: ubuntu-latest
 
+    # pull_request イベント時のみ実行
+    if: github.event_name == 'pull_request'
+
     steps:
-      # 1) ソースコードチェックアウト
-      - name: Check out repository
+      - name: Check out code
         uses: actions/checkout@v3
 
-      # 2) Node のセットアップ
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: '18'
 
-      # 3) 依存パッケージのインストール
       - name: Install dependencies
         run: npm ci
+        working-directory: ./frontend
 
-      # 4) 必要なら .env.dev / .env.prod を生成する（例として GitHub Secrets を使う場合）
-      #
-      #   - (A) GitHub SecretsでVITE_API_STAGE, VITE_COGNITO_USER_POOL_ID, ...などを管理
-      #   - (B) ここでechoして.envファイルを作るか、あるいは--mode引数のみで済むなら不要
-      # 例:
-      # - name: Create .env file from secrets
-      #   run: |
-      #     echo "VITE_API_STAGE=${{ secrets.VITE_API_STAGE }}" >> .env
-      #     echo "VITE_COGNITO_REGION=${{ secrets.VITE_COGNITO_REGION }}" >> .env
-      #     # ...etc
-
-      # 5) テスト
       - name: Run tests
         run: npm run test
+        working-directory: ./frontend
 
-      # 6) ビルド
-      #    - developブランチ → 開発用ビルド
-      #    - mainブランチ → 本番ビルド
-      - name: Build
-        run: |
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            echo "Building for production"
-            npm run build:dev
-          else
-            echo "Building for develop"
-            npm run build:prod
-          fi
 
-      # 7) AWS Credential を設定（Secretsから取得）
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+  # ============================
+  # (B) developブランチ → Stagingデプロイ
+  # ============================
+  build-and-deploy-develop:
+    name: Build & Deploy (develop -> staging)
+    runs-on: ubuntu-latest
+
+    # pushイベント かつ developブランチ の場合のみ実行
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          node-version: '18'
 
-      # 8) デプロイ（push の場合のみ。pull_requestイベントの場合はデプロイしない）
-      - name: Deploy to S3
-        if: github.event_name == 'push'
-        run: |
-          # develop または main どちらのブランチか判定
-          if [ "${{ github.ref_name }}" = "develop" ]; then
-            echo "Deploying to STAGING bucket: markdown-portal-dev"
-            aws s3 sync dist/ s3://markdown-portal-dev/ --delete
-          elif [ "${{ github.ref_name }}" = "main" ]; then
-            echo "Deploying to PRODUCTION bucket: markdown-portal-prod"
-            aws s3 sync dist/ s3://markdown-portal-prod/ --delete
-          else
-            echo "Not a target branch - skipping deploy."
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./frontend
+
+      - name: Build (staging)
+        run: npm run build:dev
+        working-directory: ./frontend
+        env:
+          VITE_API_STAGE: "dev"
+          REACT_APP_USE_MOCK_AUTH: "false"
+          VITE_COGNITO_DOMAIN: ${{ secrets.DEV_COGNITO_DOMAIN }}
+          VITE_COGNITO_CLIENT_ID: ${{ secrets.DEV_COGNITO_CLIENT_ID }}
+          VITE_COGNITO_USER_POOL_ID: ${{ secrets.DEV_COGNITO_USER_POOL_ID }}
+          VITE_COGNITO_REGION: ${{ secrets.DEV_COGNITO_REGION }}
+          VITE_SIGNIN_URL: ${{ secrets.DEV_SIGNIN_URL }}
+          VITE_SIGNOUT_URL: ${{ secrets.DEV_SIGNOUT_URL }}
+
+      - name: Deploy to S3 (staging)
+        run: aws s3 sync dist s3://${{ secrets.S3_STAGING_BUCKET }} --delete
+        working-directory: ./frontend
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+
+  # ============================
+  # (C) mainブランチ → Productionデプロイ
+  # ============================
+  build-and-deploy-main:
+    name: Build & Deploy (main -> production)
+    runs-on: ubuntu-latest
+
+    # pushイベント かつ mainブランチ の場合のみ実行
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./frontend
+
+      - name: Build (production)
+        run: npm run build:prod
+        working-directory: ./frontend
+        env:
+          VITE_API_STAGE: "prod"
+          REACT_APP_USE_MOCK_AUTH: "false"
+          VITE_COGNITO_DOMAIN: ${{ secrets.PROD_COGNITO_DOMAIN }}
+          VITE_COGNITO_CLIENT_ID: ${{ secrets.PROD_COGNITO_CLIENT_ID }}
+          VITE_COGNITO_USER_POOL_ID: ${{ secrets.PROD_COGNITO_USER_POOL_ID }}
+          VITE_COGNITO_REGION: ${{ secrets.PROD_COGNITO_REGION }}
+          VITE_SIGNIN_URL: ${{ secrets.PROD_SIGNIN_URL }}
+          VITE_SIGNOUT_URL: ${{ secrets.PROD_SIGNOUT_URL }}
+
+      - name: Deploy to S3 (production)
+        run: aws s3 sync dist s3://${{ secrets.S3_PROD_BUCKET }} --delete
+        working-directory: ./frontend
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
