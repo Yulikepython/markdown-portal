@@ -54,32 +54,24 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         run: |
           cd backend
+          export "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}"
           if [ "${{ github.ref_name }}" = "develop" ]; then
             echo "Deploying to dev stage..."
 
             # 環境変数をGitHub Secretsからexport → serverless.yml が ${env:...} 参照
-            export DEV_COGNITO_REGION="${{ secrets.DEV_COGNITO_REGION }}"
-            export DEV_COGNITO_USER_POOL_ID="${{ secrets.DEV_COGNITO_USER_POOL_ID }}"
-            export DEV_COGNITO_DOMAIN="${{ secrets.DEV_COGNITO_DOMAIN }}"
-            export DEV_COGNITO_CLIENT_ID="${{ secrets.DEV_COGNITO_CLIENT_ID }}"
-            export DEV_SIGNIN_URL="${{ secrets.DEV_SIGNIN_URL }}"
-            export DEV_SIGNOUT_URL="${{ secrets.DEV_SIGNOUT_URL }}"
-            export S3_STAGING_BUCKET="${{ secrets.S3_STAGING_BUCKET }}"
-            echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}"
+            export AWS_REGION="${{ secrets.DEV_COGNITO_REGION }}"
+            export COGNITO_USER_POOL_ID="${{ secrets.DEV_COGNITO_USER_POOL_ID }}"
+            export COGNITO_CLIENT_ID="${{ secrets.DEV_COGNITO_CLIENT_ID }}"
+            
 
             serverless deploy --stage dev
 
           elif [ "${{ github.ref_name }}" = "main" ]; then
             echo "Deploying to prod stage..."
 
-            export PROD_COGNITO_REGION="${{ secrets.PROD_COGNITO_REGION }}"
-            export PROD_COGNITO_USER_POOL_ID="${{ secrets.PROD_COGNITO_USER_POOL_ID }}"
-            export PROD_COGNITO_DOMAIN="${{ secrets.PROD_COGNITO_DOMAIN }}"
-            export PROD_COGNITO_CLIENT_ID="${{ secrets.PROD_COGNITO_CLIENT_ID }}"
-            export PROD_SIGNIN_URL="${{ secrets.PROD_SIGNIN_URL }}"
-            export PROD_SIGNOUT_URL="${{ secrets.PROD_SIGNOUT_URL }}"
-            export S3_PROD_BUCKET="${{ secrets.S3_PROD_BUCKET }}"
-            echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}"
+            export AWS_REGION="${{ secrets.PROD_COGNITO_REGION }}"
+            export COGNITO_USER_POOL_ID="${{ secrets.PROD_COGNITO_USER_POOL_ID }}"
+            export COGNITO_CLIENT_ID="${{ secrets.PROD_COGNITO_CLIENT_ID }}"
 
             serverless deploy --stage prod
 

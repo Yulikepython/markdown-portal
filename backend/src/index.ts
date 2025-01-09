@@ -3,11 +3,10 @@ import express from "express";
 import serverlessHttp from "serverless-http";
 import { Handler } from "aws-lambda";
 import { authenticateUser } from "./middlewares/authIndex";  // ←ここだけimport
-
 import { DocumentController } from "./controllers/document";
 
-
 export const app = express();
+
 app.use(express.json());
 app.use(authenticateUser); // ローカル:モック or JWT検証
 
