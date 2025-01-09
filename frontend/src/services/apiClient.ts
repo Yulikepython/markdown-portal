@@ -3,11 +3,12 @@ import axios from "axios";
 import { fetchAuthSession, AuthSession } from "aws-amplify/auth";
 import { useMemo } from "react";
 
-const stage: string = import.meta.env.VITE_API_STAGE ? `/${import.meta.env.VITE_API_STAGE}` : "";
+const stage: string = import.meta.env.VITE_API_STAGE ? `${import.meta.env.VITE_API_STAGE}` : "";
+const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL;
 export const useApiClient = () => {
     return useMemo( () => {
         const apiClient = axios.create({
-            baseURL: `http://localhost:3000${stage}/api`,
+            baseURL: `${apiBaseUrl}/${stage}/api`,
             headers: {
                 "Content-Type": "application/json",
             },

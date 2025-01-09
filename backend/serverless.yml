@@ -3,24 +3,19 @@ org: itcmedia
 
 useDotenv: true
 
-
 provider:
   name: aws
   runtime: nodejs18.x
   region: ap-northeast-1
-
-  # --stage オプションが指定されなければ "dev" にする
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'dev'} # 未指定ならdev
 
   environment:
     # ブランチ(ステージ)ごとにテーブル名を変える
     DYNAMO_TABLE_NAME: "DocumentsTable-${self:provider.stage}"
-    # ローカルで serverless offline を起動するときは、手動で IS_OFFLINE=true をセット
-    IS_OFFLINE: ${env:IS_OFFLINE, 'false'}
-    DYNAMO_ENDPOINT: ${env:DYNAMO_ENDPOINT, 'http://localhost:8888'}
-    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID, 'local-offline-upid'}
-    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID, 'local-offline-cid'}
-    AWS_REGION: ${env:AWS_REGION, 'ap-northeast-1'}
+    MY_AWS_REGION: ${env:AWS_REGION}
+    AWS_ACCOUNT_ID: ${env:AWS_ACCOUNT_ID}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
 
   iamRoleStatements:
     - Effect: "Allow"
@@ -37,20 +32,21 @@ provider:
         - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}"
         - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}/index/*"
 
-# (※1) custom 変数で「ローカル環境かどうか」に応じて authorizer を切り替える
 custom:
-  # stage ごとに authorizer 設定を切り替える
-  authorizerSetting:
-    local: {}        # ローカル時は認証を無効化 (null)
-    dev:
-      type: COGNITO
-      authorizerId: { Ref: ApiGatewayAuthorizer }
-    prod:
-      type: COGNITO
-      authorizerId: { Ref: ApiGatewayAuthorizer }
-  # ここでは stage に合わせて .env.dev, .env.prod などを読み込む例
+  # dotenvプラグイン設定: 例えば stage=dev のとき .env.dev を読み込むようにする
+  # ただし fallback 機能はプラグイン自体に無いので「ファイルが無ければ読み込み失敗」にはなります。
+  # → dev 環境では事前に .env.dev を置いておく or GH Secrets で上書きする形で回避
   dotenv:
     path: .env.${self:provider.stage}
+
+  # stage ごとに authorizer 設定を切り替える
+  authorizerSetting:
+    dev:
+      type: COGNITO_USER_POOLS
+      authorizerId: { Ref: ApiGatewayAuthorizer }
+    prod:
+      type: COGNITO_USER_POOLS
+      authorizerId: { Ref: ApiGatewayAuthorizer }
 
 functions:
   docsHandler:
@@ -80,9 +76,6 @@ functions:
       - http:
           path: api/documents/{slug}
           method: get
-
-plugins:
-  - serverless-offline
 
 resources:
   Resources:
@@ -126,9 +119,9 @@ resources:
       Type: AWS::ApiGateway::Authorizer
       Properties:
         Name: MyCognitoAuthorizer
-        Type: COGNITO
+        Type: COGNITO_USER_POOLS
         IdentitySource: method.request.header.Authorization
         ProviderARNs:
-          - arn:aws:cognito-idp:ap-northeast-1:123456789012:userpool/ap-northeast-1_XXXXXXX
+          - arn:aws:cognito-idp:${self:provider.environment.MY_AWS_REGION}:${self:provider.environment.AWS_ACCOUNT_ID}:userpool/${self:provider.environment.COGNITO_USER_POOL_ID}
         RestApiId:
           Ref: ApiGatewayRestApi

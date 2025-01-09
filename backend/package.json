@@ -5,7 +5,7 @@
   "scripts": {
     "build": "tsc",
     "create-local-tables": "IS_OFFLINE=true DYNAMO_TABLE_NAME=DocumentsTable-local DYNAMO_ENDPOINT=http://localhost:8888 node dist/scripts/createLocalTables.js",
-    "dev": "npm run build && npm run create-local-tables && IS_OFFLINE=true serverless offline --stage local",
+    "dev": "npm run build && npm run create-local-tables && IS_OFFLINE=true serverless offline --config serverless-local.yml",
     "deploy:dev": "serverless deploy --stage dev",
     "deploy:prod": "serverless deploy --stage prod",
     "test": "IS_OFFLINE=true jest --coverage"

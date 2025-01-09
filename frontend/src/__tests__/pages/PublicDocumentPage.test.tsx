@@ -4,6 +4,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import PublicDocumentPage from '../../pages/PublicDocumentPage'
 import { useApiClient } from '../../services/apiClient'
+import '@testing-library/jest-dom'
+
 vi.mock('../../services/apiClient')
 
 function renderPublicDocPage(slug: string) {
@@ -18,6 +20,8 @@ function renderPublicDocPage(slug: string) {
 
 describe('PublicDocumentPage', () => {
     beforeEach(() => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         (useApiClient as vi.Mock).mockReturnValue({
             getPublicDocumentBySlug: vi.fn().mockResolvedValue({
                 content: '# Public doc\nThis is content for the public doc',

@@ -6,8 +6,8 @@ import jwkToPem from "jwk-to-pem";
 /**
  * Cognito の User Pool ID 等を環境変数から取得
  */
-const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID || "";
-const REGION = process.env.AWS_REGION || "ap-northeast-1";
+const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+const REGION = process.env.MY_AWS_REGION;
 
 const JWKS_URL = `https://cognito-idp.${REGION}.amazonaws.com/${USER_POOL_ID}/.well-known/jwks.json`;
 
