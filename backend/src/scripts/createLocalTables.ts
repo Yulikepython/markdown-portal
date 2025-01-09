@@ -26,7 +26,7 @@ export function getTableDefinition(): any {
 }
 
 const dynamoClient = new DynamoDBClient({
-    region: process.env.AWS_REGION,
+    region: process.env.MY_AWS_REGION,
     endpoint: isOffline ? process.env.DYNAMO_ENDPOINT : undefined,
 });
 

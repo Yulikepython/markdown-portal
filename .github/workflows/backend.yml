@@ -65,6 +65,7 @@ jobs:
             export DEV_SIGNIN_URL="${{ secrets.DEV_SIGNIN_URL }}"
             export DEV_SIGNOUT_URL="${{ secrets.DEV_SIGNOUT_URL }}"
             export S3_STAGING_BUCKET="${{ secrets.S3_STAGING_BUCKET }}"
+            echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}"
 
             serverless deploy --stage dev
 
@@ -78,6 +79,7 @@ jobs:
             export PROD_SIGNIN_URL="${{ secrets.PROD_SIGNIN_URL }}"
             export PROD_SIGNOUT_URL="${{ secrets.PROD_SIGNOUT_URL }}"
             export S3_PROD_BUCKET="${{ secrets.S3_PROD_BUCKET }}"
+            echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}"
 
             serverless deploy --stage prod
 

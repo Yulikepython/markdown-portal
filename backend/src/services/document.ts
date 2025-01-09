@@ -23,7 +23,7 @@ const tableName: string = process.env.DYNAMO_TABLE_NAME || "";
 
 // DynamoDB クライアントの設定
 const dynamoClient = new DynamoDBClient({
-    region: process.env.AWS_REGION,
+    region: process.env.MY_AWS_REGION,
     endpoint: isOffline ? process.env.DYNAMO_ENDPOINT : undefined, //@todo 要確認
 });
 

@@ -7,9 +7,9 @@ import { getPemForKid } from "./jwksCache";
 /**
  * (A) 環境変数から取得
  */
-const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID || "";
-const REGION = process.env.AWS_REGION || "ap-northeast-1";
-const CLIENT_ID = process.env.COGNITO_CLIENT_ID || "";
+const USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
+const REGION = process.env.MY_AWS_REGION;
+const CLIENT_ID = process.env.COGNITO_CLIENT_ID;
 
 /**
  * (B) issuer / audience を動的に組み立てる
