@@ -83,6 +83,7 @@ jobs:
           VITE_COGNITO_REGION: ${{ secrets.DEV_COGNITO_REGION }}
           VITE_SIGNIN_URL: ${{ secrets.DEV_SIGNIN_URL }}
           VITE_SIGNOUT_URL: ${{ secrets.DEV_SIGNOUT_URL }}
+          VITE_API_BASE_URL: ${{ secrets.DEV_API_BASE_URL }}
 
       - name: Deploy to S3 (staging)
         run: aws s3 sync dist s3://${{ secrets.S3_STAGING_BUCKET }} --delete
@@ -128,6 +129,7 @@ jobs:
           VITE_COGNITO_REGION: ${{ secrets.PROD_COGNITO_REGION }}
           VITE_SIGNIN_URL: ${{ secrets.PROD_SIGNIN_URL }}
           VITE_SIGNOUT_URL: ${{ secrets.PROD_SIGNOUT_URL }}
+          VITE_API_BASE_URL: ${{ secrets.PROD_API_BASE_URL }}
 
       - name: Deploy to S3 (production)
         run: aws s3 sync dist s3://${{ secrets.S3_PROD_BUCKET }} --delete
