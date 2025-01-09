@@ -4,7 +4,7 @@ import { fetchAuthSession, AuthSession } from "aws-amplify/auth";
 import { useMemo } from "react";
 
 const stage: string = import.meta.env.VITE_API_STAGE ? `${import.meta.env.VITE_API_STAGE}` : "";
-const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL;
+export const apiBaseUrl: string = import.meta.env.VITE_API_BASE_URL;
 export const useApiClient = () => {
     return useMemo( () => {
         const apiClient = axios.create({
