@@ -56,26 +56,39 @@ functions:
           path: api/docs
           method: get
           authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
       - http:
           path: api/docs/{slug}
           method: get
           authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors:
+            origin: 'https://staging-owpnmhda.app-connect.cloud'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+            allowCredentials: false
       - http:
           path: api/docs
           method: post
           authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
       - http:
           path: api/docs/{slug}
           method: put
           authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
       - http:
           path: api/docs/{slug}
           method: delete
           authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
       # 公開ドキュメントAPIはそもそも認証不要 (authorizer: なし)
       - http:
           path: api/documents/{slug}
           method: get
+          cors: true
 
 resources:
   Resources:
@@ -113,6 +126,17 @@ resources:
         KeySchema:
           - AttributeName: pk
             KeyType: HASH
+
+    # こちらは API Gateway のカスタムレスポンス定義
+    GatewayResponseDefault4XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+          "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
 
     # Cognito User Pool Authorizer の Resource
     ApiGatewayAuthorizer:
