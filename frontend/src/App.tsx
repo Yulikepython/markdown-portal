@@ -5,7 +5,8 @@ import DocsListPage from "./pages/DocsListPage";
 import DocPage from "./pages/DocPage";
 import PublicDocumentPage from "./pages/PublicDocumentPage";
 
-import { CombinedAuthProvider, useAuthContext } from "./context/AuthContext.bridge";
+import { CombinedAuthProvider } from "./context/AuthContext.bridge";
+import { useAuthContextSwitch as useAuthContext} from "./context/useAuthContextSwitch.ts";
 import "./App.css"; // 必要に応じて、追加CSSをApp.cssなどに追記
 
 const App: React.FC = () => {
