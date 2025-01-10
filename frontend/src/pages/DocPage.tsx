@@ -6,7 +6,7 @@ import { useApiClient } from "../services/apiClient";
 import MdEditor from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
 import ReactMarkdown from "react-markdown";
-import { useAuthContext } from "../context/AuthContext.bridge";
+import { useAuthContextSwitch as useAuthContext} from "../context/useAuthContextSwitch.ts";
 import styles from "../styles/DocPage.module.scss";
 
 const DocPage: React.FC = () => {
