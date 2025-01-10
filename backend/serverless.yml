@@ -61,14 +61,7 @@ functions:
           path: api/docs/{slug}
           method: get
           authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
-          cors:
-            origin: 'https://staging-owpnmhda.app-connect.cloud'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-            allowCredentials: false
+          cors: true
       - http:
           path: api/docs
           method: post
@@ -137,6 +130,17 @@ resources:
         ResponseType: DEFAULT_4XX
         RestApiId:
           Ref: 'ApiGatewayRestApi'
+
+    # 既にある DEFAULT_4XX の下に DEFAULT_5XX を追加
+    GatewayResponseDefault5XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseParameters:
+          "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+          "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
 
     # Cognito User Pool Authorizer の Resource
     ApiGatewayAuthorizer:

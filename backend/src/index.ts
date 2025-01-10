@@ -5,7 +5,24 @@ import { Handler } from "aws-lambda";
 import { authenticateUser } from "./middlewares/authIndex";  // ←ここだけimport
 import { DocumentController } from "./controllers/document";
 
+/**
+ * CORS用カスタムミドルウェア
+ *  - すべてのレスポンスに Access-Control-Allow-Origin を付加する
+ */
+function attachCorsHeaders(req: express.Request, res: express.Response, next: express.NextFunction) {
+    // レスポンスヘッダーを付与
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amzn-Trace-Id');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+    next();
+}
+
 export const app = express();
+
+// ❶ グローバルにCORSヘッダー付与
+app.use(attachCorsHeaders);
 
 app.use(express.json());
 app.use(authenticateUser); // ローカル:モック or JWT検証
