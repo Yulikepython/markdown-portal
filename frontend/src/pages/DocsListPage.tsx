@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useApiClient } from "../services/apiClient";
-import { useAuthContext } from "../context/AuthContext.bridge";
+import { useAuthContextSwitch as useAuthContext} from "../context/useAuthContextSwitch.ts";
 import { AxiosError } from "axios";
 
 import styles from "../styles/DocsListPage.module.scss";

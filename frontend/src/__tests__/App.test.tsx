@@ -6,10 +6,9 @@ import '@testing-library/jest-dom'
 
 
 // 必要なエクスポートを部分モックするための設定
-vi.mock('../context/AuthContext.bridge', async (importOriginal) => {
-  // const actual = await importOriginal();
+vi.mock('../context/useAuthContextSwitch', async (importOriginal) => {
     const actual = (await importOriginal()) as object;
-  return { ...actual, useAuthContext: () => ({ isSignedIn: true, user: { userId: 'test-user' }, login: vi.fn(), logout: vi.fn() }) }
+  return { ...actual, useAuthContextSwitch: () => ({ isSignedIn: true, user: { userId: 'test-user' }, login: vi.fn(), logout: vi.fn() }) }
 })
 
 // 2) apiClient をモック (必要なら)

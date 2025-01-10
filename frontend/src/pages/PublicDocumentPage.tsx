@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useAuthContext } from "../context/AuthContext.bridge";
+import { useAuthContextSwitch as useAuthContext} from "../context/useAuthContextSwitch.ts";
 import { useApiClient } from "../services/apiClient";
 import styles from "../styles/DocPage.module.scss";
 
