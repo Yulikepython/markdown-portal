@@ -18,7 +18,10 @@ const App: React.FC = () => {
 };
 
 const MainRouter: React.FC = () => {
-    const { isSignedIn, userEmail, login, logout } = useAuthContext();
+    const { isSignedIn, user, login, logout } = useAuthContext();
+
+    //user.usernameの最初の5文字を取得する
+    const accountDisplay = user ? user.userId.slice(0, 7) : null;
 
     return (
         <Router>
@@ -33,7 +36,7 @@ const MainRouter: React.FC = () => {
                     {isSignedIn ? (
                         <>
                             {/* メールアドレスを右寄せ表示 */}
-                            <span className="user-email">{userEmail || "unknown"}</span>
+                            <span className="user-email">{ isSignedIn ? accountDisplay : ""}</span>
                             <button className="logout-btn" onClick={logout}>
                                 Logout
                             </button>

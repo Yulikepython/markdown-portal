@@ -49,7 +49,9 @@ const DocsListPage: React.FC = () => {
                 }
             }
         };
-        fetchDocs();
+        if (isSignedIn){
+            fetchDocs();
+        }
     }, [api, user]);
 
     if (error) {

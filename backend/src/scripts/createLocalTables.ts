@@ -9,13 +9,6 @@ import { DocumentServiceDynamo } from '../services/document'; // <= 追加
 
 const isOffline: boolean = process.env.IS_OFFLINE === 'true';
 
-// --- DocCounter 定義をハードコードで用意 ---
-const docCounterDefinition = {
-    TableName: DocumentServiceDynamo.COUNTER_TABLE_NAME, // => "DocCounter"
-    BillingMode: "PAY_PER_REQUEST",
-    AttributeDefinitions: [{ AttributeName: "pk", AttributeType: "S" }],
-    KeySchema: [{ AttributeName: "pk", KeyType: "HASH" }],
-};
 
 export function getTableDefinition(): any {
   const tableDefinitionPath = path.resolve(__dirname, '../../dynamodb-table-definition.json');
@@ -59,13 +52,14 @@ async function putIfNotExists(doc: Document, tableDefinition: any) {
         const params = {
             TableName: tableDefinition.TableName,
             Item: {
-                id: { N: doc.id.toString() },
                 userId: { S: doc.userId },
                 slug:   { S: doc.slug },
                 content: { S: doc.content },
                 isPublic: { BOOL: doc.isPublic },
                 schemaVersion: { N: doc.schemaVersion.toString() },
                 docMetadata: { S: JSON.stringify(doc.docMetadata ?? {})},
+                createdAt: { S: doc.createdAt },
+                updatedAt: { S: doc.updatedAt },
             },
             // すでに userId+slug が存在する場合は上書きしない
             ConditionExpression: "attribute_not_exists(userId) AND attribute_not_exists(slug)",
@@ -81,28 +75,6 @@ async function putIfNotExists(doc: Document, tableDefinition: any) {
     }
 }
 
-// DocCounter を初期化する例 (pk=docCounter, counterValue=0)
-async function initDocCounter() {
-    try {
-        const params = {
-            TableName: docCounterDefinition.TableName,
-            Item: {
-                pk: { S: "docCounter" },
-                counterValue: { N: "0" },
-            },
-            ConditionExpression: "attribute_not_exists(pk)",
-        };
-        await dynamoClient.send(new PutItemCommand(params));
-        console.log(`Inserted initial docCounter=0`);
-    } catch (error: any) {
-        if (error.name === "ConditionalCheckFailedException") {
-            console.log("docCounter already initialized. Skipping.");
-        } else {
-            console.error("Error putting docCounter item:", error);
-        }
-    }
-}
-
 async function insertDefaultDocuments(tableDefinition: any) {
     for (const doc of documents) {
         await putIfNotExists(doc, tableDefinition);
@@ -113,15 +85,8 @@ export async function main() {
     const tableDefinition = getTableDefinition();
     // 1) DocumentsTable の作成
     await createTableIfNotExists(tableDefinition);
-
-    // 2) DocCounter の作成
-    await createTableIfNotExists(docCounterDefinition);
-
     // 3) DocumentsTable にサンプルデータ挿入
     await insertDefaultDocuments(tableDefinition);
-
-    // 4) DocCounter を初期化 (必要なら)
-    await initDocCounter();
 }
 
 // ★テストでなく実行用なら、条件分岐で呼ぶ

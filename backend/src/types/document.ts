@@ -3,12 +3,13 @@
  * 将来的にdocMetadataにJSON形式の追加情報を入れていく想定。
  */
 export interface Document {
-    id: number;
     content: string;
     isPublic: boolean;
     slug: string;
     userId: string;
     schemaVersion: number;
+    createdAt: string;
+    updatedAt: string;
 
     /**
      * 将来拡張用: JSON形式で任意のデータを保存できる
