@@ -31,7 +31,6 @@ provider:
       Resource:
         - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}"
         - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}/index/*"
-
 custom:
   # dotenvプラグイン設定: 例えば stage=dev のとき .env.dev を読み込むようにする
   # ただし fallback 機能はプラグイン自体に無いので「ファイルが無ければ読み込み失敗」にはなります。
@@ -107,18 +106,6 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
-
-    DocCounterTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: DocCounter
-        BillingMode: PAY_PER_REQUEST
-        AttributeDefinitions:
-          - AttributeName: pk
-            AttributeType: S
-        KeySchema:
-          - AttributeName: pk
-            KeyType: HASH
 
     # こちらは API Gateway のカスタムレスポンス定義
     GatewayResponseDefault4XX:

@@ -64,5 +64,3 @@ functions:
 
 plugins:
   - serverless-offline
-
-# DynamoDBのテーブルは、createLocalTables.tsで作成のため、ここでは定義しない

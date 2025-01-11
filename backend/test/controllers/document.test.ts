@@ -43,7 +43,7 @@ describe('DocumentController', () => {
     it('should return documents in JSON', async () => {
         // モック: 返却値
         (DocumentServiceDynamo.getDocumentsByOwnUser as jest.Mock).mockResolvedValue([
-            { userId: sampleUseId, slug: 'abc', content: 'hello', isPublic: false }
+            { userId: sampleUseId, slug: 'abc', content: 'hello', isPublic: false, createdAt: '2024-01-01', updatedAt: '2024-01-01' }
         ]);
 
         // 実行
@@ -55,7 +55,7 @@ describe('DocumentController', () => {
         // 検証
         expect(DocumentServiceDynamo.getDocumentsByOwnUser).toHaveBeenCalledWith(sampleUseId);
         expect(jsonMock).toHaveBeenCalledWith([
-            { userId: sampleUseId, slug: 'abc', content: 'hello', isPublic: false }
+            { userId: sampleUseId, slug: 'abc', content: 'hello', isPublic: false, createdAt: '2024-01-01', updatedAt: '2024-01-01'  }
         ]);
     });
 
@@ -105,7 +105,9 @@ describe('DocumentController', () => {
                     slug: 'docSlug',
                     content: 'example content',
                     isPublic: false,
-                });
+                    createdAt: '2024-01-01',
+                    updatedAt: '2024-01-01'
+            });
 
                 await DocumentController.getDocumentBySlugOfLoggedInUser(
                     mockReq as Request,
@@ -119,6 +121,8 @@ describe('DocumentController', () => {
                     slug: 'docSlug',
                     content: 'example content',
                     isPublic: false,
+                    createdAt: '2024-01-01',
+                    updatedAt: '2024-01-01'
                 });
             });
 
@@ -148,6 +152,8 @@ describe('DocumentController', () => {
                     slug: 'public-slug',
                     content: 'public content',
                     isPublic: true,
+                    createdAt: '2024-01-01',
+                    updatedAt: '2024-01-01'
                 });
 
                 await DocumentController.getDocumentBySlugOfPublic(
@@ -162,6 +168,8 @@ describe('DocumentController', () => {
                     slug: 'public-slug',
                     content: 'public content',
                     isPublic: true,
+                    createdAt: '2024-01-01',
+                    updatedAt: '2024-01-01'
                 });
             });
 
@@ -192,6 +200,8 @@ describe('DocumentController', () => {
                     slug: 'abc-123',
                     content: 'new doc content',
                     isPublic: false,
+                    createdAt: '2024-01-01',
+                    updatedAt: '2024-01-01'
                 });
 
                 await DocumentController.createDocument(mockReq as Request, mockRes as Response);
@@ -205,6 +215,8 @@ describe('DocumentController', () => {
                     slug: 'abc-123',
                     content: 'new doc content',
                     isPublic: false,
+                    createdAt: '2024-01-01',
+                    updatedAt: '2024-01-01'
                 });
             });
 
@@ -242,6 +254,8 @@ describe('DocumentController', () => {
                     slug: 'doc-slug',
                     content: 'updated content',
                     isPublic: true,
+                    createdAt: '2024-01-01',
+                    updatedAt: '2024-01-01'
                 });
 
                 await DocumentController.updateDocument(mockReq as Request, mockRes as Response);
@@ -257,6 +271,8 @@ describe('DocumentController', () => {
                     slug: 'doc-slug',
                     content: 'updated content',
                     isPublic: true,
+                    createdAt: '2024-01-01',
+                    updatedAt: '2024-01-01'
                 });
             });
 
