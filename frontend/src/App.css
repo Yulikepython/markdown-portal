@@ -1,0 +1,129 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* -----------------------------
+   2) 他の要素がナビゲーションバーに隠れないための余白
+   ----------------------------- */
+body {
+  width:100%;
+}
+#root {
+    width:100%;
+    text-align: start;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+main {
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+footer {
+  flex-shrink: 0;
+}
+
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* -----------------------------
+   1) ナビゲーションバー全体
+   ----------------------------- */
+.navbar-custom {
+  background-color: #1f3e5a; /* 好みの色に変更 (濃いブルー系など) */
+  padding:0 1rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: 100%;
+}
+
+/* 左側ロゴ部分 */
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+.nav-logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  text-decoration: none;
+}
+.nav-logo:hover {
+  opacity: 0.8;
+}
+
+/* 右側（メールアドレス＋ボタン） */
+.navbar-right {
+  display: flex;
+  align-items: center;
+}
+.user-email {
+  margin-right: 1rem;
+  font-size: 0.95rem;
+  color: #ddd;
+}
+
+/* ボタン系：見栄えアップ */
+.logout-btn, .login-btn {
+  background-color: #f44336; /* ログアウトボタンは赤系 */
+  border: none;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+  margin-left: 0.5rem;
+}
+.logout-btn:hover, .login-btn:hover {
+  background-color: #d32f2f;
+}
+
+

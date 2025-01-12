@@ -1,0 +1,142 @@
+service: markdown-portal-backend
+org: itcmedia
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-northeast-1
+  stage: ${opt:stage, 'dev'} # 未指定ならdev
+
+  environment:
+    # ブランチ(ステージ)ごとにテーブル名を変える
+    DYNAMO_TABLE_NAME: "DocumentsTable-${self:provider.stage}"
+    MY_AWS_REGION: ${env:AWS_REGION}
+    AWS_ACCOUNT_ID: ${env:AWS_ACCOUNT_ID}
+    COGNITO_USER_POOL_ID: ${env:COGNITO_USER_POOL_ID}
+    COGNITO_CLIENT_ID: ${env:COGNITO_CLIENT_ID}
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:BatchGetItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:Scan"
+        - "dynamodb:Query"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}/index/*"
+custom:
+  # dotenvプラグイン設定: 例えば stage=dev のとき .env.dev を読み込むようにする
+  # ただし fallback 機能はプラグイン自体に無いので「ファイルが無ければ読み込み失敗」にはなります。
+  # → dev 環境では事前に .env.dev を置いておく or GH Secrets で上書きする形で回避
+  dotenv:
+    path: .env.${self:provider.stage}
+
+  # stage ごとに authorizer 設定を切り替える
+  authorizerSetting:
+    dev:
+      type: COGNITO_USER_POOLS
+      authorizerId: { Ref: ApiGatewayAuthorizer }
+    prod:
+      type: COGNITO_USER_POOLS
+      authorizerId: { Ref: ApiGatewayAuthorizer }
+
+functions:
+  docsHandler:
+    handler: dist/index.handler
+    events:
+      - http:
+          path: api/docs
+          method: get
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
+      - http:
+          path: api/docs/{slug}
+          method: get
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
+      - http:
+          path: api/docs
+          method: post
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
+      - http:
+          path: api/docs/{slug}
+          method: put
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
+      - http:
+          path: api/docs/{slug}
+          method: delete
+          authorizer: ${self:custom.authorizerSetting.${self:provider.stage}, null}
+          cors: true
+      # 公開ドキュメントAPIはそもそも認証不要 (authorizer: なし)
+      - http:
+          path: api/documents/{slug}
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    DocumentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMO_TABLE_NAME}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: slug
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: slug
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: SlugIndex
+            KeySchema:
+              - AttributeName: slug
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    # こちらは API Gateway のカスタムレスポンス定義
+    GatewayResponseDefault4XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+          "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+
+    # 既にある DEFAULT_4XX の下に DEFAULT_5XX を追加
+    GatewayResponseDefault5XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseType: DEFAULT_5XX
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseParameters:
+          "gatewayresponse.header.Access-Control-Allow-Origin": "'*'"
+          "gatewayresponse.header.Access-Control-Allow-Headers": "'*'"
+
+    # Cognito User Pool Authorizer の Resource
+    ApiGatewayAuthorizer:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: MyCognitoAuthorizer
+        Type: COGNITO_USER_POOLS
+        IdentitySource: method.request.header.Authorization
+        ProviderARNs:
+          - arn:aws:cognito-idp:${self:provider.environment.MY_AWS_REGION}:${self:provider.environment.AWS_ACCOUNT_ID}:userpool/${self:provider.environment.COGNITO_USER_POOL_ID}
+        RestApiId:
+          Ref: ApiGatewayRestApi

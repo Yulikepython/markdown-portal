@@ -1,0 +1,66 @@
+service: markdown-portal-backend-local
+org: itcmedia
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-northeast-1
+  stage: local
+
+  environment:
+    DYNAMO_TABLE_NAME: "DocumentsTable-local"
+    IS_OFFLINE: "true"
+    DYNAMO_ENDPOINT: 'http://localhost:8888'
+    COGNITO_USER_POOL_ID: 'local-offline-upid'
+    COGNITO_CLIENT_ID: 'local-offline-cid'
+    MY_AWS_REGION: 'ap-northeast-1'
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "dynamodb:BatchGetItem"
+        - "dynamodb:GetItem"
+        - "dynamodb:Scan"
+        - "dynamodb:Query"
+        - "dynamodb:BatchWriteItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMO_TABLE_NAME}/index/*"
+
+custom:
+  authorizerSetting:
+    local: {}
+
+  dotenv:
+    path: .env.local
+
+functions:
+  docsHandler:
+    handler: dist/index.handler
+    events:
+      - http:
+          path: api/docs
+          method: get
+      - http:
+          path: api/docs/{slug}
+          method: get
+      - http:
+          path: api/docs
+          method: post
+      - http:
+          path: api/docs/{slug}
+          method: put
+      - http:
+          path: api/docs/{slug}
+          method: delete
+      - http:
+          path: api/documents/{slug}
+          method: get
+
+plugins:
+  - serverless-offline

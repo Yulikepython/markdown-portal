@@ -1,0 +1,85 @@
+name: CI/CD for Backend
+
+on:
+  # develop/main ブランチへの push でデプロイ
+  push:
+    branches:
+      - develop
+      - main
+
+  # プルリクエスト時はテストのみ
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) コードをチェックアウト
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 2) Node.js のセットアップ
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # 3) 依存パッケージをインストール
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm ci
+
+      - name: Install serverless
+        run: |
+          npm install -g serverless
+
+      # 4) テスト実行
+      - name: Run tests
+        run: |
+          cd backend
+          npm run test
+
+      # 5) AWS 認証 (push の場合のみ) → これ以降で serverless deploy
+      - name: Configure AWS Credentials
+        if: ${{ github.event_name == 'push' }}
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 6) デプロイ (develop → dev / main → prod)
+      - name: Deploy
+        if: ${{ github.event_name == 'push' }}
+        env:
+          SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+        run: |
+          cd backend
+          export "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}"
+          if [ "${{ github.ref_name }}" = "develop" ]; then
+            echo "Deploying to dev stage..."
+
+            # 環境変数をGitHub Secretsからexport → serverless.yml が ${env:...} 参照
+            export AWS_REGION="${{ secrets.DEV_COGNITO_REGION }}"
+            export COGNITO_USER_POOL_ID="${{ secrets.DEV_COGNITO_USER_POOL_ID }}"
+            export COGNITO_CLIENT_ID="${{ secrets.DEV_COGNITO_CLIENT_ID }}"
+            
+            npm run deploy:dev
+
+          elif [ "${{ github.ref_name }}" = "main" ]; then
+            echo "Deploying to prod stage..."
+
+            export AWS_REGION="${{ secrets.PROD_COGNITO_REGION }}"
+            export COGNITO_USER_POOL_ID="${{ secrets.PROD_COGNITO_USER_POOL_ID }}"
+            export COGNITO_CLIENT_ID="${{ secrets.PROD_COGNITO_CLIENT_ID }}"
+            
+            npm run deploy:prod
+
+          else
+            echo "Not on develop or main. Skipping deploy."
+          fi
