@@ -1,0 +1,22 @@
+/* PrivacyPolicyPage.module.scss */
+.privacyContainer {
+  max-width: 800px;
+  margin: 20px auto;
+  font-family: sans-serif;
+  line-height: 1.6;
+}
+
+.privacyTitle {
+  font-size: 1.6rem;
+  margin-bottom: 1rem;
+}
+
+.privacySubtitle {
+  font-size: 1.3rem;
+  margin: 1.2rem 0 0.5rem;
+}
+
+.sectionList {
+  margin: 0.5rem 0 1rem 1.5rem;
+  list-style-type: disc;
+}
