@@ -23,7 +23,7 @@ export const AmplifyAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     // ❷ マウント時に必ず 1回 fetchCurrentUser() を呼んでログイン状態を反映
     useEffect(() => {
-        fetchCurrentUser().then(); // 最初に実行
+        fetchCurrentUser().then();
 
         const unsubscribe = Hub.listen('auth', ({ payload }) => {
             switch (payload.event) {
