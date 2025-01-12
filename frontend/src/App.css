@@ -3,10 +3,35 @@
     margin: 0;
     padding: 0;
 }
-#root {
-  width:100%;
-  text-align: start;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
 }
+
+/* -----------------------------
+   2) 他の要素がナビゲーションバーに隠れないための余白
+   ----------------------------- */
+body {
+  width:100%;
+}
+#root {
+    width:100%;
+    text-align: start;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+main {
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+footer {
+  flex-shrink: 0;
+}
+
 
 .logo {
   height: 6em;
@@ -101,12 +126,4 @@
   background-color: #d32f2f;
 }
 
-/* -----------------------------
-   2) 他の要素がナビゲーションバーに隠れないための余白
-   ----------------------------- */
-body {
-  margin: 0;
-  padding: 0;
-  width:100%;
-}
 
