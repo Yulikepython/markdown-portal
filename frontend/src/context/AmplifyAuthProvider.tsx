@@ -1,6 +1,6 @@
 // AmplifyAuthProvider.tsx
 import React, { useEffect, useState } from 'react';
-import { AuthUser, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
+import { FetchUserAttributesOutput, fetchUserAttributes , AuthUser, getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
 import { Hub } from 'aws-amplify/utils';
 import { AuthEvents } from '../config/projectVars';
 import { AuthContext } from './authContextCore';
@@ -8,13 +8,16 @@ import { AuthContext } from './authContextCore';
 export const AmplifyAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [user, setUser] = useState<AuthUser | null>(null);
+    const [displayName, setDisplayName] = useState<string | undefined>(undefined);
 
     // ❶ 現在のユーザーを取得する共通関数
     const fetchCurrentUser = async () => {
         try {
             const currentUser = await getCurrentUser();
+            const userAttributes: FetchUserAttributesOutput = await fetchUserAttributes();
             setIsSignedIn(true);
             setUser(currentUser);
+            setDisplayName(userAttributes?.email || "匿名ユーザー");
         } catch {
             setIsSignedIn(false);
             setUser(null);
@@ -66,6 +69,7 @@ export const AmplifyAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
             value={{
                 user,
                 isSignedIn,
+                displayName,
                 login,
                 logout,
             }}
