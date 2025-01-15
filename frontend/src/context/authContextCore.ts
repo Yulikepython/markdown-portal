@@ -9,6 +9,7 @@ export interface AuthContextType {
     displayName: string | undefined;
     login: () => Promise<void>;
     logout: () => Promise<void>;
+    reFetchDisplayName: () => Promise<void>;
 }
 
 /** Context本体 */
@@ -18,6 +19,7 @@ export const AuthContext = createContext<AuthContextType>({
     displayName: undefined,
     login: async () => {},
     logout: async () => {},
+    reFetchDisplayName: async () => {},
 });
 
 /** カスタムフック */

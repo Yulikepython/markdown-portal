@@ -72,6 +72,7 @@ export const AmplifyAuthProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 displayName,
                 login,
                 logout,
+                reFetchDisplayName: fetchCurrentUser,
             }}
         >
             {children}

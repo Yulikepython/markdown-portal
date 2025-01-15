@@ -10,6 +10,7 @@ interface AuthContextType {
     displayName: string | undefined;
     login: () => void;
     logout: () => void;
+    reFetchDisplayName: () => void;
 }
 
 // モック用
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
     displayName: "",
     login: () => {},
     logout: () => {},
+    reFetchDisplayName: () => {},
 });
 
 export const useAuthContext = () => useContext(AuthContext); //eslint-disable-line
@@ -47,6 +49,7 @@ export const MockAuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 displayName: isSignedIn ? LOCAL_USER_EMAIL : undefined,
                 login,
                 logout,
+                reFetchDisplayName: login,
             }}
         >
             {children}
