@@ -6,13 +6,13 @@ import { MockAuthProvider, LOCAL_USER_ID, LOCAL_USER_EMAIL } from '../../context
 import { useAuthContext } from '../../context/AuthContext.mock'
 
 function TestComponent(): JSX.Element {
-    const { user, isSignedIn, userEmail, login, logout } = useAuthContext();
+    const { user, isSignedIn, displayName, login, logout } = useAuthContext();
 
     return (
         <div>
             <p data-testid="userId">{user?.userId || 'no-user'}</p>
             <p data-testid="isSignedIn">{isSignedIn ? 'true' : 'false'}</p>
-            <p data-testid="userEmail">{userEmail || 'no-email'}</p>
+            <p data-testid="displayName">{displayName || 'no-email'}</p>
             <button onClick={login}>login</button>
             <button onClick={logout}>logout</button>
         </div>
@@ -29,7 +29,7 @@ describe('AuthContext.mock', () => {
         // 初期値
         expect(screen.getByTestId('userId').textContent).toBe('no-user')
         expect(screen.getByTestId('isSignedIn').textContent).toBe('false')
-        expect(screen.getByTestId('userEmail').textContent).toBe('no-email')
+        expect(screen.getByTestId('displayName').textContent).toBe('no-email')
 
         // ログイン操作
         userEvent.click(screen.getByText('login'))
@@ -38,7 +38,7 @@ describe('AuthContext.mock', () => {
         await waitFor(() => {
             expect(screen.getByTestId('userId').textContent).toBe(LOCAL_USER_ID)
             expect(screen.getByTestId('isSignedIn').textContent).toBe('true')
-            expect(screen.getByTestId('userEmail').textContent).toBe(LOCAL_USER_EMAIL)
+            expect(screen.getByTestId('displayName').textContent).toBe(LOCAL_USER_EMAIL)
         })
     })
 })
