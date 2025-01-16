@@ -105,6 +105,13 @@ curl http://localhost:3000/local/api/docs
 
 ---
 
+### DynamoDB テーブル設計
+
+#### バックアップの設定
+Issue #38 にて、DynamoDB テーブルのバックアップ設定について証跡等保存してます。
+当アプリでは、PITRを有効にし、データを保護しています。
+![](https://github.com/user-attachments/assets/15698408-b973-40dc-9fa0-1eb2a56a6078)
+
 ## GitのSecrets管理
 Secretsの一覧画像は以下のとおりです。
 ![](https://github.com/user-attachments/assets/0fdb1c27-fd3e-483a-85eb-d977ab34c251)
