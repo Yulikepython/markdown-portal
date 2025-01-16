@@ -48,6 +48,23 @@ const DocPage: React.FC = () => {
         fetchDocument().then();
     }, [slug, user, isSignedIn, api]);
 
+    // 1) マウント時に sessionStorage から読み込み //@session保持は未使用のため機能していない
+    useEffect(() => {
+        const storedDraft = sessionStorage.getItem("docDraft");
+        if (storedDraft) {
+            setContent(storedDraft);
+        }
+    }, [user]);
+
+    // 2) エディタの入力イベント: sessionStorage へ都度保存 //@session保持は未使用
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const handleEditorChange = ({ text }: { text: string }) => {
+        setContent(text);
+        sessionStorage.setItem("docDraft", text);
+    };
+
     // ------------------------
     // 公開チェック変更
     // ------------------------
@@ -71,6 +88,8 @@ const DocPage: React.FC = () => {
                 // 新規 => create
                 await api.createDocument(content, isPublic);
             }
+            // 保存完了後、sessionStorage からドラフトを削除してクリア
+            // sessionStorage.removeItem("docDraft"); //@session保持は未使用のため機能していない
             navigate("/my-docs");  // 保存後は一覧へ飛ばす
         } catch (err) {
             console.error(err);
@@ -177,7 +196,7 @@ const DocPage: React.FC = () => {
                                 className="shareButton"
                                 onClick={() => {
                                     const url = `${window.location.origin}/documents/${slug}`;
-                                    navigator.clipboard.writeText(url);
+                                    navigator.clipboard.writeText(url).then(r => r);
                                     alert("公開URLをコピーしました！\n" + url);
                                 }}
                             >
@@ -194,7 +213,10 @@ const DocPage: React.FC = () => {
                     )}
                 </>
             ) : (
-                <p>ドキュメントの保存はログインユーザーのみ可能です。</p>
+                <>
+                    <p>ドキュメントの保存はログインユーザーのみ可能です。</p>
+                    <p>ログインせずに入力した内容は保持されませんので、ご注意ください</p>
+                </>
             )}
         </div>
     );
