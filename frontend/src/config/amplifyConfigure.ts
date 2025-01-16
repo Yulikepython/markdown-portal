@@ -15,12 +15,18 @@ export const config: ResourcesConfig = {
             loginWith: {
                 oauth: {
                     domain: `${COGNITO_DOMAIN_PREFIX}.auth.${COGNITO_REGION}.amazoncognito.com`,
-                    scopes: ["openid"],
+                    scopes: [
+                        "openid",
+                        "aws.cognito.signin.user.admin",
+                    ],
                     redirectSignIn: [SIGNIN_URL],
                     redirectSignOut: [SIGNOUT_URL],
                     responseType: "code",
                 },
             },
+            userAttributes: {
+                email: {required: true},
+            }
         },
     },
 };

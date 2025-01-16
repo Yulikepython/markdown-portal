@@ -2,21 +2,24 @@
 import { createContext, useContext } from "react";
 import { AuthUser } from "aws-amplify/auth";
 
+
 export interface AuthContextType {
     user: AuthUser | null;
     isSignedIn: boolean;
-    userEmail?: string;
+    displayName: string | undefined;
     login: () => Promise<void>;
     logout: () => Promise<void>;
+    reFetchDisplayName: () => Promise<void>;
 }
 
 /** Context本体 */
 export const AuthContext = createContext<AuthContextType>({
     user: null,
     isSignedIn: false,
-    userEmail: undefined,
+    displayName: undefined,
     login: async () => {},
     logout: async () => {},
+    reFetchDisplayName: async () => {},
 });
 
 /** カスタムフック */
