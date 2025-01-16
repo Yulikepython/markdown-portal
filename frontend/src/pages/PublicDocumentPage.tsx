@@ -1,12 +1,15 @@
+// PublicDocumentPage.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useAuthContextSwitch as useAuthContext} from "../context/useAuthContextSwitch.ts";
+import { useAuthContextSwitch as useAuthContext } from "../context/useAuthContextSwitch";
 import { useApiClient } from "../services/apiClient";
 import styles from "../styles/DocPage.module.scss";
 
 import MdEditor from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
 import ReactMarkdown from "react-markdown";
+// ★ 追加
+import DOMPurify from "dompurify";
 
 const PublicDocumentPage: React.FC = () => {
     const { user } = useAuthContext();
@@ -27,8 +30,8 @@ const PublicDocumentPage: React.FC = () => {
                 }
             }
         };
-        fetchDocument().then();
-    }, [slug, user, api, content]);
+        fetchDocument();
+    }, [slug, user, api]);
 
     if (error) {
         return (
@@ -48,8 +51,7 @@ const PublicDocumentPage: React.FC = () => {
 
     return (
         <div className={styles.container}>
-            {/* タイトルや説明 */}
-            <p style={{fontSize: "1rem", marginBottom: "16px", color: "#555", textAlign:"right"}}>
+            <p style={{ fontSize: "1rem", marginBottom: "16px", color: "#555", textAlign: "right" }}>
                 ※こちらのドキュメントは公開設定になっているため、URLを知っていれば誰でも閲覧可能です。
             </p>
 
@@ -58,18 +60,21 @@ const PublicDocumentPage: React.FC = () => {
                     <MdEditor
                         style={{}}
                         value={content}
-                        onChange={({text}) => setContent(text)}
-                        renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
+                        // ★ sanitize (最低限)
+                        renderHTML={(text) => (
+                            <ReactMarkdown>{DOMPurify.sanitize(text)}</ReactMarkdown>
+                        )}
                         config={{
-                            view: {menu: false, md: false, html: true},
-                            canView: {fullScreen: true, hideMenu: true},
+                            view: { menu: false, md: false, html: true },
+                            canView: { fullScreen: true, hideMenu: true },
                         }}
                     />
                 </div>
             </div>
-            <div style={{margin: "16px 0"}}>
-                <Link to="/" style={{color: "#007bff", textDecoration: "none"}}>
-                    &larr; Home
+
+            <div style={{ margin: "16px 0" }}>
+                <Link to="/my-docs" style={{ color: "#007bff", textDecoration: "none" }}>
+                    &larr; My Docs
                 </Link>
             </div>
         </div>
