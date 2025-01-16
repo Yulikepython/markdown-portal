@@ -1,7 +1,6 @@
 // PublicDocumentPage.tsx
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useAuthContextSwitch as useAuthContext } from "../context/useAuthContextSwitch";
 import { useApiClient } from "../services/apiClient";
 import styles from "../styles/DocPage.module.scss";
 
@@ -12,7 +11,6 @@ import ReactMarkdown from "react-markdown";
 import DOMPurify from "dompurify";
 
 const PublicDocumentPage: React.FC = () => {
-    const { user } = useAuthContext();
     const { slug } = useParams<{ slug: string }>();
     const [content, setContent] = useState<string>("");
     const [error, setError] = useState<string | null>(null);
@@ -31,7 +29,7 @@ const PublicDocumentPage: React.FC = () => {
             }
         };
         fetchDocument();
-    }, [slug, user, api]);
+    }, [slug, api]);
 
     if (error) {
         return (
