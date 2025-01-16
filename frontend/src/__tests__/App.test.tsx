@@ -26,7 +26,7 @@ vi.mock('../services/apiClient', () => {
 describe('App', () => {
     beforeEach(() => {
         // もしURLを変えたいなら pushState
-        window.history.pushState({}, '', '/') // ルートへ
+        window.history.pushState({}, '', '/my-docs') // ルートへ
     })
 
     it('初期表示: DocsListPage が表示される（ドキュメント一覧）', async () => {
@@ -41,7 +41,7 @@ describe('App', () => {
 
     it('「/docs/new」へ遷移した場合、DocPage のエディタが表示されるか', async () => {
         // ルート変更
-        window.history.pushState({}, '', '/docs/new')
+        window.history.pushState({}, '', '/')
 
         render(<App />)
         // DocPage が描画 → "Save"ボタンあり
