@@ -1,15 +1,14 @@
-// App.tsx (抜粋)
+// App.tsx （抜粋）
+
 import React from "react";
 import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import DocsListPage from "./pages/DocsListPage";
 import DocPage from "./pages/DocPage";
 import PublicDocumentPage from "./pages/PublicDocumentPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-
 import { CombinedAuthProvider } from "./context/AuthContext.bridge";
-import { useAuthContextSwitch as useAuthContext} from "./context/useAuthContextSwitch.ts";
-import "./App.css"; // 必要に応じて、追加CSSをApp.cssなどに追記
-
+import { useAuthContextSwitch as useAuthContext} from "./context/useAuthContextSwitch";
+import "./App.css";
 import footerStyles from "./styles/Footer.module.scss";
 import TermsOfUsePage from "./pages/TermsOfUsePage";
 import AccountInfoPage from "./pages/AccountInfoPage";
@@ -30,14 +29,11 @@ const MainRouter: React.FC = () => {
             {/* ナビゲーションバー */}
             <header className="navbar-custom">
                 <div className="navbar-left">
-                    <Link to="/" className="nav-logo">
-                        Markdown Portal
-                    </Link>
+                    <Link to="/" className="nav-logo">Markdown Portal</Link>
                 </div>
                 <div className="navbar-right">
                     {isSignedIn ? (
                         <>
-                            {/* displayName を押すと /account へ移動するように */}
                             <Link to="/account" className="user-email">
                                 {displayName}
                             </Link>
@@ -52,24 +48,30 @@ const MainRouter: React.FC = () => {
                     )}
                 </div>
             </header>
+
             <main>
-            {/* ルーティング */}
-            <Routes>
-                <Route path="/" element={<DocsListPage/>}/>
-                <Route path="/docs/:slug" element={<DocPage/>}/>
-                <Route path="/docs/new" element={<DocPage/>}/>
-                <Route path="/documents/:slug" element={<PublicDocumentPage/>}/>
-                <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
-                <Route path="/terms-of-use" element={<TermsOfUsePage />} />
-                <Route path="/account" element={<AccountInfoPage />} />
-            </Routes>
+                <Routes>
+                    {/* 新規作成 (DocPageを "新規モード" で表示) */}
+                    <Route path="/" element={<DocPage />} />
+
+                    {/* 自分のドキュメント一覧 */}
+                    <Route path="/my-docs" element={<DocsListPage />} />
+
+                    {/* 自分のドキュメント詳細・編集 */}
+                    <Route path="/my-docs/:slug" element={<DocPage />} />
+
+                    {/* 公開用ドキュメント */}
+                    <Route path="/documents/:slug" element={<PublicDocumentPage />} />
+
+                    <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                    <Route path="/terms-of-use" element={<TermsOfUsePage />} />
+                    <Route path="/account" element={<AccountInfoPage />} />
+                </Routes>
             </main>
 
-            {/* Footer */}
             <footer className={footerStyles.footerContainer}>
                 <div className={footerStyles.footerContent}>
                     <p>© 2025 Markdown Portal</p>
-
                     <div>
                         <Link to="/privacy-policy" className={footerStyles.footerLink}>
                             プライバシーポリシー

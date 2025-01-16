@@ -2,11 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useApiClient } from "../services/apiClient";
-import { useAuthContextSwitch as useAuthContext} from "../context/useAuthContextSwitch.ts";
+import { useAuthContextSwitch as useAuthContext} from "../context/useAuthContextSwitch";
 import { AxiosError } from "axios";
 
 import styles from "../styles/DocsListPage.module.scss";
-
 
 const extractTitle = (markdown: string): string => {
     const lines = markdown.split("\n");
@@ -49,10 +48,10 @@ const DocsListPage: React.FC = () => {
                 }
             }
         };
-        if (isSignedIn){
+        if (isSignedIn) {
             fetchDocs();
         }
-    }, [api, user]);
+    }, [api, user, isSignedIn]);
 
     if (error) {
         return <div style={{ color: "red" }}>{error}</div>;
@@ -70,8 +69,9 @@ const DocsListPage: React.FC = () => {
             {isSignedIn ? (
                 <>
                     <div style={{ margin: "16px 0", textAlign: "right" }}>
+                        {/* 新規ドキュメントは "/" に */}
                         <Link
-                            to="/docs/new"
+                            to="/"
                             style={{
                                 backgroundColor: "#007bff",
                                 color: "white",
@@ -103,14 +103,11 @@ const DocsListPage: React.FC = () => {
                             const title = extractTitle(doc.content);
                             const isPublic = doc.isPublic;
                             return (
-                                <tr
-                                    key={doc.slug}
-                                    style={{ borderBottom: "1px solid #ddd" }}
-                                >
+                                <tr key={doc.slug} style={{ borderBottom: "1px solid #ddd" }}>
                                     {/* タイトル */}
                                     <td style={{ padding: "8px" }}>
                                         <Link
-                                            to={`/docs/${doc.slug}`}
+                                            to={`/my-docs/${doc.slug}`}
                                             style={{ color: "#007bff", textDecoration: "none" }}
                                         >
                                             <strong>{title}</strong>
@@ -129,11 +126,11 @@ const DocsListPage: React.FC = () => {
                                     {/* 共有ボタン（公開時のみ） */}
                                     <td style={{ padding: "8px" }}>
                                         {isPublic ? (
-                                            <button className={styles.shareButton} onClick={() => handleShare(doc.slug)}>共有</button>
+                                            <button className={styles.shareButton} onClick={() => handleShare(doc.slug)}>
+                                                共有
+                                            </button>
                                         ) : (
-                                            <em style={{ fontSize: "0.9rem", color: "#888" }}>
-                                                -
-                                            </em>
+                                            <em style={{ fontSize: "0.9rem", color: "#888" }}>-</em>
                                         )}
                                     </td>
                                 </tr>
