@@ -7,18 +7,20 @@ export const LOCAL_USER_EMAIL = "mockuser@example.com";
 interface AuthContextType {
     user: { userId: string } | null;
     isSignedIn: boolean;
-    userEmail?: string;
+    displayName: string | undefined;
     login: () => void;
     logout: () => void;
+    reFetchDisplayName: () => void;
 }
 
 // モック用
 const AuthContext = createContext<AuthContextType>({
     user: null,
     isSignedIn: false,
-    userEmail: "",
+    displayName: "",
     login: () => {},
     logout: () => {},
+    reFetchDisplayName: () => {},
 });
 
 export const useAuthContext = () => useContext(AuthContext); //eslint-disable-line
@@ -44,9 +46,10 @@ export const MockAuthProvider: React.FC<{ children: React.ReactNode }> = ({
             value={{
                 user,
                 isSignedIn,
-                userEmail: isSignedIn ? LOCAL_USER_EMAIL : undefined,
+                displayName: isSignedIn ? LOCAL_USER_EMAIL : undefined,
                 login,
                 logout,
+                reFetchDisplayName: login,
             }}
         >
             {children}

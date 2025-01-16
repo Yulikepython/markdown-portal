@@ -12,6 +12,7 @@ import "./App.css"; // 必要に応じて、追加CSSをApp.cssなどに追記
 
 import footerStyles from "./styles/Footer.module.scss";
 import TermsOfUsePage from "./pages/TermsOfUsePage";
+import AccountInfoPage from "./pages/AccountInfoPage";
 
 const App: React.FC = () => {
     return (
@@ -22,10 +23,7 @@ const App: React.FC = () => {
 };
 
 const MainRouter: React.FC = () => {
-    const { isSignedIn, user, login, logout } = useAuthContext();
-
-    //user.usernameの最初の5文字を取得する
-    const accountDisplay = user ? user.userId.slice(0, 7) : null;
+    const { isSignedIn, login, logout, displayName } = useAuthContext();
 
     return (
         <Router>
@@ -39,8 +37,10 @@ const MainRouter: React.FC = () => {
                 <div className="navbar-right">
                     {isSignedIn ? (
                         <>
-                            {/* メールアドレスを右寄せ表示 */}
-                            <span className="user-email">{isSignedIn ? accountDisplay : ""}</span>
+                            {/* displayName を押すと /account へ移動するように */}
+                            <Link to="/account" className="user-email">
+                                {displayName}
+                            </Link>
                             <button className="logout-btn" onClick={logout}>
                                 Logout
                             </button>
@@ -61,6 +61,7 @@ const MainRouter: React.FC = () => {
                 <Route path="/documents/:slug" element={<PublicDocumentPage/>}/>
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage/>}/>
                 <Route path="/terms-of-use" element={<TermsOfUsePage />} />
+                <Route path="/account" element={<AccountInfoPage />} />
             </Routes>
             </main>
 
