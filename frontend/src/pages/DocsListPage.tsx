@@ -1,10 +1,9 @@
 // DocsListPage.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useApiClient } from "../services/apiClient";
-import { useAuthContextSwitch as useAuthContext} from "../context/useAuthContextSwitch";
+import { useAuthContextSwitch as useAuthContext } from "../context/useAuthContextSwitch";
 import { AxiosError } from "axios";
-
 import styles from "../styles/DocsListPage.module.scss";
 
 const extractTitle = (markdown: string): string => {
@@ -20,6 +19,14 @@ const extractTitle = (markdown: string): string => {
 const DocsListPage: React.FC = () => {
     const [documents, setDocuments] = useState<any[]>([]); //eslint-disable-line
     const [error, setError] = useState<string | null>(null);
+
+    // ★ 検索用ステートを追加
+    const [searchTerm, setSearchTerm] = useState("");
+
+    // ★ ページング用ステート
+    const [currentPage, setCurrentPage] = useState(1);
+    const pageSize = 10; // 1ページあたり5件表示など
+
     const { user, isSignedIn } = useAuthContext();
     const api = useApiClient();
 
@@ -48,14 +55,34 @@ const DocsListPage: React.FC = () => {
                 }
             }
         };
+
         if (isSignedIn) {
             fetchDocs();
         }
     }, [api, user, isSignedIn]);
 
-    if (error) {
-        return <div style={{ color: "red" }}>{error}</div>;
-    }
+    // ★ 1) 検索フィルタリング：searchTerm を含むドキュメントだけを抽出
+    //    ここではタイトル or 本文(content)内に searchTerm が含まれるかざっくり判定
+    const filteredDocs = useMemo(() => {
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        if (!lowerSearchTerm) return documents;
+
+        return documents.filter((doc) => {
+            const title = extractTitle(doc.content).toLowerCase();
+            const content = doc.content?.toLowerCase() || "";
+            return (
+                title.includes(lowerSearchTerm) || content.includes(lowerSearchTerm)
+            );
+        });
+    }, [documents, searchTerm]);
+
+    // ★ 2) ページング: filteredDocs を currentPage, pageSize に基づいて slice
+    const totalPages = Math.ceil(filteredDocs.length / pageSize);
+    const paginatedDocs = useMemo(() => {
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        return filteredDocs.slice(startIndex, endIndex);
+    }, [filteredDocs, currentPage]);
 
     // 「共有」ボタン押下時の挙動例
     const handleShare = (slug: string) => {
@@ -64,12 +91,19 @@ const DocsListPage: React.FC = () => {
         alert("公開URLをクリップボードにコピーしました!\n" + publicUrl);
     };
 
+    if (error) {
+        return <div style={{ color: "red" }}>{error}</div>;
+    }
+
+    // --------------------------
+    // レンダリング
+    // --------------------------
     return (
-        <div style={{ width: "100%", maxWidth: "900px", margin: "10px auto", textAlign: "left" }}>
+        <div style={{ width: "100%", maxWidth: "900px", margin: "10px auto" }}>
             {isSignedIn ? (
                 <>
+                    {/* 新規ドキュメントボタン */}
                     <div style={{ margin: "16px 0", textAlign: "right" }}>
-                        {/* 新規ドキュメントは "/" に */}
                         <Link
                             to="/"
                             style={{
@@ -86,6 +120,27 @@ const DocsListPage: React.FC = () => {
 
                     <h1>ドキュメント一覧</h1>
 
+                    {/* ★ 検索入力フォーム */}
+                    <div style={{ margin: "16px 0" }}>
+                        <input
+                            type="text"
+                            placeholder="検索キーワードを入力"
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                // ページを戻す（必要なら1ページ目に戻す）
+                                setCurrentPage(1);
+                            }}
+                            style={{
+                                padding: "8px",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                width: "240px",
+                            }}
+                        />
+                    </div>
+
+                    {/* 一覧テーブル */}
                     <table className={styles.docsTable}>
                         <thead>
                         <tr style={{ backgroundColor: "#f0f0f0", borderBottom: "2px solid #ccc" }}>
@@ -99,7 +154,7 @@ const DocsListPage: React.FC = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        {documents.map((doc) => {
+                        {paginatedDocs.map((doc) => {
                             const title = extractTitle(doc.content);
                             const isPublic = doc.isPublic;
                             return (
@@ -126,7 +181,10 @@ const DocsListPage: React.FC = () => {
                                     {/* 共有ボタン（公開時のみ） */}
                                     <td style={{ padding: "8px" }}>
                                         {isPublic ? (
-                                            <button className={styles.shareButton} onClick={() => handleShare(doc.slug)}>
+                                            <button
+                                                className={styles.shareButton}
+                                                onClick={() => handleShare(doc.slug)}
+                                            >
                                                 共有
                                             </button>
                                         ) : (
@@ -138,6 +196,27 @@ const DocsListPage: React.FC = () => {
                         })}
                         </tbody>
                     </table>
+
+                    {/* ★ ページングナビゲーション */}
+                    {filteredDocs.length > 0 && (
+                        <div style={{ marginTop: "1rem", display: "flex", gap: "8px" }}>
+                            <button
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                前へ
+                            </button>
+                            <div style={{ lineHeight: "32px" }}>
+                                ページ {currentPage} / {totalPages}
+                            </div>
+                            <button
+                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                            >
+                                次へ
+                            </button>
+                        </div>
+                    )}
                 </>
             ) : (
                 <div>ログインしてください</div>
